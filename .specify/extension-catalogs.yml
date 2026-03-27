@@ -1,0 +1,8 @@
+catalogs:
+  - name: core
+    url: https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.json
+    install_allowed: true
+
+  - name: community
+    url: https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.community.json
+    install_allowed: true

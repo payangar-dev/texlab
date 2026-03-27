@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "verify": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:4baa329349fffb5598a7bd41f958cf193aac77dd624c1c64799de052995ca29a",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.verify.run",
+          "speckit.verify"
+        ],
+        "codex": [
+          "speckit.verify.run",
+          "speckit.verify"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-03-27T23:36:46.048915+00:00"
+    },
+    "review": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:0cbd39c71fbf9274e2d313d2ec8470c758759dea9e15ca162be2ae94612fc3f8",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.review.run",
+          "speckit.review",
+          "speckit.review.code",
+          "speckit.review.comments",
+          "speckit.review.tests",
+          "speckit.review.errors",
+          "speckit.review.types",
+          "speckit.review.simplify"
+        ],
+        "codex": [
+          "speckit.review.run",
+          "speckit.review",
+          "speckit.review.code",
+          "speckit.review.comments",
+          "speckit.review.tests",
+          "speckit.review.errors",
+          "speckit.review.types",
+          "speckit.review.simplify"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-03-27T23:37:54.154579+00:00"
+    }
+  }
+}
