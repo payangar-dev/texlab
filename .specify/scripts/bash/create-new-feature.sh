@@ -6,6 +6,7 @@ JSON_MODE=false
 SHORT_NAME=""
 BRANCH_NUMBER=""
 USE_TIMESTAMP=false
+ISSUE_NUMBER=""
 ARGS=()
 i=1
 while [ $i -le $# ]; do
@@ -44,20 +45,36 @@ while [ $i -le $# ]; do
         --timestamp)
             USE_TIMESTAMP=true
             ;;
+        --issue)
+            if [ $((i + 1)) -gt $# ]; then
+                echo 'Error: --issue requires an issue number' >&2
+                exit 1
+            fi
+            i=$((i + 1))
+            next_arg="${!i}"
+            # Strip leading # if present (e.g., "#42" → "42")
+            ISSUE_NUMBER="${next_arg#\#}"
+            if ! [[ "$ISSUE_NUMBER" =~ ^[0-9]+$ ]]; then
+                echo "Error: --issue requires a numeric issue number, got '$next_arg'" >&2
+                exit 1
+            fi
+            ;;
         --help|-h)
-            echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--timestamp] <feature_description>"
+            echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--timestamp] [--issue N] <feature_description>"
             echo ""
             echo "Options:"
             echo "  --json              Output in JSON format"
             echo "  --short-name <name> Provide a custom short name (2-4 words) for the branch"
             echo "  --number N          Specify branch number manually (overrides auto-detection)"
             echo "  --timestamp         Use timestamp prefix (YYYYMMDD-HHMMSS) instead of sequential numbering"
+            echo "  --issue N           Fetch feature description from GitHub issue #N"
             echo "  --help, -h          Show this help message"
             echo ""
             echo "Examples:"
             echo "  $0 'Add user authentication system' --short-name 'user-auth'"
             echo "  $0 'Implement OAuth2 integration for API' --number 5"
             echo "  $0 --timestamp --short-name 'user-auth' 'Add user authentication'"
+            echo "  $0 --json --issue 1"
             exit 0
             ;;
         *)
@@ -67,9 +84,25 @@ while [ $i -le $# ]; do
     i=$((i + 1))
 done
 
-FEATURE_DESCRIPTION="${ARGS[*]}"
+# If --issue is specified, fetch the issue title as feature description
+if [ -n "$ISSUE_NUMBER" ]; then
+    if ! command -v gh >/dev/null 2>&1; then
+        echo "Error: GitHub CLI (gh) is required for --issue flag" >&2
+        exit 1
+    fi
+    ISSUE_TITLE=$(gh issue view "$ISSUE_NUMBER" --json title --jq '.title' 2>/dev/null)
+    if [ -z "$ISSUE_TITLE" ]; then
+        echo "Error: Could not fetch GitHub issue #$ISSUE_NUMBER" >&2
+        exit 1
+    fi
+    FEATURE_DESCRIPTION="$ISSUE_TITLE"
+    >&2 echo "[specify] Using GitHub issue #$ISSUE_NUMBER: $ISSUE_TITLE"
+else
+    FEATURE_DESCRIPTION="${ARGS[*]}"
+fi
+
 if [ -z "$FEATURE_DESCRIPTION" ]; then
-    echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--timestamp] <feature_description>" >&2
+    echo "Usage: $0 [--json] [--short-name <name>] [--number N] [--timestamp] [--issue N] <feature_description>" >&2
     exit 1
 fi
 

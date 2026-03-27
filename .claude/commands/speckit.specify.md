@@ -18,6 +18,25 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## GitHub Issue Resolution
+
+If `$ARGUMENTS` matches a GitHub issue reference (e.g., `#1`, `#42`, `GH-5`),
+you MUST resolve it before proceeding:
+
+1. Extract the issue number from the input.
+2. Fetch the issue using: `gh issue view <number> --json title,body,labels`
+3. Use the issue **title** as the feature name and the issue **body** as the
+   feature description for all subsequent steps.
+4. If the issue body contains a `## Tasks` section with checkboxes, treat
+   each task as a functional requirement hint.
+5. If the issue has labels, use them as context (e.g., a `milestone:core`
+   label indicates which part of the system is affected).
+6. If the issue references other issues (e.g., "Depends on #2"), note them
+   in the Assumptions section of the spec.
+
+If `$ARGUMENTS` is NOT an issue reference, treat it as a plain-text feature
+description (original behavior).
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before specification)**:
@@ -76,7 +95,13 @@ Given that feature description, do this:
    - If `"timestamp"`, add `--timestamp` (Bash) or `-Timestamp` (PowerShell) to the script invocation
    - If `"sequential"` or absent, do not add any extra flag (default behavior)
 
+   **GitHub issue mode**: If the input was resolved as a GitHub issue (see
+   "GitHub Issue Resolution" above), pass `--issue <number>` to the script.
+   The script will fetch the issue title and use it as the feature description.
+   You do NOT need to pass the description as a positional argument in this case.
+
    - Bash example: `.specify/scripts/bash/create-new-feature.sh "$ARGUMENTS" --json --short-name "user-auth" "Add user authentication"`
+   - Bash (issue): `.specify/scripts/bash/create-new-feature.sh --json --issue 1 --short-name "project-scaffolding"`
    - Bash (timestamp): `.specify/scripts/bash/create-new-feature.sh "$ARGUMENTS" --json --timestamp --short-name "user-auth" "Add user authentication"`
    - PowerShell example: `.specify/scripts/bash/create-new-feature.sh "$ARGUMENTS" -Json -ShortName "user-auth" "Add user authentication"`
    - PowerShell (timestamp): `.specify/scripts/bash/create-new-feature.sh "$ARGUMENTS" -Json -Timestamp -ShortName "user-auth" "Add user authentication"`
