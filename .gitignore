@@ -1,0 +1,36 @@
+# Sources (reference code, not part of the project)
+.sources/
+
+# Dependencies
+node_modules/
+target/
+
+# Build output
+dist/
+src-tauri/gen/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.*
+
+# Tauri
+src-tauri/target/
+WixTools/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local settings
+.claude/settings.local.json
