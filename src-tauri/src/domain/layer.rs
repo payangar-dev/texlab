@@ -33,12 +33,7 @@ pub struct Layer {
 impl Layer {
     /// Creates a new layer with default properties (visible, unlocked,
     /// full opacity, Normal blend mode) and a transparent pixel buffer.
-    pub fn new(
-        id: LayerId,
-        name: String,
-        width: u32,
-        height: u32,
-    ) -> Result<Self, DomainError> {
+    pub fn new(id: LayerId, name: String, width: u32, height: u32) -> Result<Self, DomainError> {
         if name.is_empty() {
             return Err(DomainError::EmptyName);
         }
@@ -88,7 +83,9 @@ impl Layer {
 
     pub fn set_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), DomainError> {
         if self.locked {
-            return Err(DomainError::LayerLocked { layer_id: self.id.value() });
+            return Err(DomainError::LayerLocked {
+                layer_id: self.id.value(),
+            });
         }
         self.buffer.set_pixel(x, y, color)
     }
@@ -166,7 +163,12 @@ mod tests {
         let err = layer.set_pixel(10, 10, Color::WHITE).unwrap_err();
         assert_eq!(
             err,
-            DomainError::OutOfBounds { x: 10, y: 10, width: 4, height: 4 }
+            DomainError::OutOfBounds {
+                x: 10,
+                y: 10,
+                width: 4,
+                height: 4
+            }
         );
     }
 

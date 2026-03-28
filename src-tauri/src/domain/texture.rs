@@ -106,7 +106,13 @@ mod tests {
     use crate::domain::color::Color;
 
     fn test_texture() -> Texture {
-        Texture::new("minecraft".into(), "textures/block/stone.png".into(), 16, 16).unwrap()
+        Texture::new(
+            "minecraft".into(),
+            "textures/block/stone.png".into(),
+            16,
+            16,
+        )
+        .unwrap()
     }
 
     #[test]
@@ -135,7 +141,13 @@ mod tests {
     #[test]
     fn rejects_zero_dimensions() {
         let err = Texture::new("ns".into(), "path".into(), 0, 16).unwrap_err();
-        assert_eq!(err, DomainError::InvalidDimensions { width: 0, height: 16 });
+        assert_eq!(
+            err,
+            DomainError::InvalidDimensions {
+                width: 0,
+                height: 16
+            }
+        );
     }
 
     #[test]
@@ -194,7 +206,10 @@ mod tests {
         tex.mark_saved(); // reset dirty
 
         // Mutate via layer_stack_mut — dirty is NOT auto-set
-        let layer = tex.layer_stack_mut().get_layer_mut(LayerId::new(1)).unwrap();
+        let layer = tex
+            .layer_stack_mut()
+            .get_layer_mut(LayerId::new(1))
+            .unwrap();
         layer.set_pixel(0, 0, Color::WHITE).unwrap();
         assert!(!tex.is_dirty()); // still clean — caller-managed
 

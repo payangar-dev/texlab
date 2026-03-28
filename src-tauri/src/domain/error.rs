@@ -3,15 +3,32 @@ use std::fmt;
 /// Domain-specific error type. Uses only `std` (no thiserror).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainError {
-    InvalidDimensions { width: u32, height: u32 },
-    OutOfBounds { x: u32, y: u32, width: u32, height: u32 },
-    LayerLocked { layer_id: u128 },
-    LayerNotFound { layer_id: u128 },
-    InvalidIndex { index: usize, len: usize },
+    InvalidDimensions {
+        width: u32,
+        height: u32,
+    },
+    OutOfBounds {
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+    },
+    LayerLocked {
+        layer_id: u128,
+    },
+    LayerNotFound {
+        layer_id: u128,
+    },
+    InvalidIndex {
+        index: usize,
+        len: usize,
+    },
     EmptyName,
     EmptyNamespace,
     EmptyPath,
-    IoError { reason: String },
+    IoError {
+        reason: String,
+    },
 }
 
 impl fmt::Display for DomainError {
@@ -20,8 +37,16 @@ impl fmt::Display for DomainError {
             Self::InvalidDimensions { width, height } => {
                 write!(f, "invalid dimensions: {width}x{height} (must be > 0)")
             }
-            Self::OutOfBounds { x, y, width, height } => {
-                write!(f, "pixel ({x}, {y}) out of bounds for {width}x{height} buffer")
+            Self::OutOfBounds {
+                x,
+                y,
+                width,
+                height,
+            } => {
+                write!(
+                    f,
+                    "pixel ({x}, {y}) out of bounds for {width}x{height} buffer"
+                )
             }
             Self::LayerLocked { layer_id } => {
                 write!(f, "layer {layer_id} is locked")
@@ -48,14 +73,25 @@ mod tests {
 
     #[test]
     fn display_invalid_dimensions() {
-        let err = DomainError::InvalidDimensions { width: 0, height: 16 };
+        let err = DomainError::InvalidDimensions {
+            width: 0,
+            height: 16,
+        };
         assert_eq!(err.to_string(), "invalid dimensions: 0x16 (must be > 0)");
     }
 
     #[test]
     fn display_out_of_bounds() {
-        let err = DomainError::OutOfBounds { x: 20, y: 5, width: 16, height: 16 };
-        assert_eq!(err.to_string(), "pixel (20, 5) out of bounds for 16x16 buffer");
+        let err = DomainError::OutOfBounds {
+            x: 20,
+            y: 5,
+            width: 16,
+            height: 16,
+        };
+        assert_eq!(
+            err.to_string(),
+            "pixel (20, 5) out of bounds for 16x16 buffer"
+        );
     }
 
     #[test]
@@ -73,7 +109,10 @@ mod tests {
     #[test]
     fn display_invalid_index() {
         let err = DomainError::InvalidIndex { index: 5, len: 3 };
-        assert_eq!(err.to_string(), "index 5 out of range for stack of length 3");
+        assert_eq!(
+            err.to_string(),
+            "index 5 out of range for stack of length 3"
+        );
     }
 
     #[test]
@@ -96,7 +135,9 @@ mod tests {
 
     #[test]
     fn display_io_error() {
-        let err = DomainError::IoError { reason: "file not found".into() };
+        let err = DomainError::IoError {
+            reason: "file not found".into(),
+        };
         assert_eq!(err.to_string(), "I/O error: file not found");
     }
 

@@ -20,11 +20,13 @@ impl LayerStack {
     }
 
     pub fn remove_layer(&mut self, id: LayerId) -> Result<Layer, DomainError> {
-        let pos = self
-            .layers
-            .iter()
-            .position(|l| l.id() == id)
-            .ok_or(DomainError::LayerNotFound { layer_id: id.value() })?;
+        let pos =
+            self.layers
+                .iter()
+                .position(|l| l.id() == id)
+                .ok_or(DomainError::LayerNotFound {
+                    layer_id: id.value(),
+                })?;
         Ok(self.layers.remove(pos))
     }
 
@@ -272,7 +274,13 @@ mod tests {
     fn composite_rejects_zero_dimensions() {
         let stack = LayerStack::new();
         let err = stack.composite(0, 4).unwrap_err();
-        assert_eq!(err, DomainError::InvalidDimensions { width: 0, height: 4 });
+        assert_eq!(
+            err,
+            DomainError::InvalidDimensions {
+                width: 0,
+                height: 4
+            }
+        );
     }
 
     #[test]
@@ -282,7 +290,13 @@ mod tests {
         stack.add_layer(layer);
 
         let err = stack.composite(4, 4).unwrap_err();
-        assert_eq!(err, DomainError::InvalidDimensions { width: 2, height: 2 });
+        assert_eq!(
+            err,
+            DomainError::InvalidDimensions {
+                width: 2,
+                height: 2
+            }
+        );
     }
 
     #[test]
@@ -350,6 +364,9 @@ mod tests {
         stack.add_layer(make_layer(42, "target", 2, 2));
         let layer = stack.get_layer_mut(LayerId::new(42)).unwrap();
         layer.set_name("modified".to_string()).unwrap();
-        assert_eq!(stack.get_layer(LayerId::new(42)).unwrap().name(), "modified");
+        assert_eq!(
+            stack.get_layer(LayerId::new(42)).unwrap().name(),
+            "modified"
+        );
     }
 }

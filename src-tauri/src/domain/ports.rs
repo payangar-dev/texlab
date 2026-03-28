@@ -108,7 +108,9 @@ mod tests {
         let err = reader.read("missing.png").unwrap_err();
         assert_eq!(
             err,
-            DomainError::IoError { reason: "file not found: missing.png".into() }
+            DomainError::IoError {
+                reason: "file not found: missing.png".into()
+            }
         );
     }
 
@@ -129,7 +131,9 @@ mod tests {
         let err = writer.write("/readonly/out.png", &buf).unwrap_err();
         assert_eq!(
             err,
-            DomainError::IoError { reason: "permission denied: /readonly/out.png".into() }
+            DomainError::IoError {
+                reason: "permission denied: /readonly/out.png".into()
+            }
         );
     }
 
@@ -148,7 +152,9 @@ mod tests {
         let err = scanner.scan("corrupt.zip").unwrap_err();
         assert_eq!(
             err,
-            DomainError::IoError { reason: "corrupt archive: corrupt.zip".into() }
+            DomainError::IoError {
+                reason: "corrupt archive: corrupt.zip".into()
+            }
         );
     }
 

@@ -54,7 +54,12 @@ impl PixelBuffer {
 
     pub fn get_pixel(&self, x: u32, y: u32) -> Result<Color, DomainError> {
         let i = self.index(x, y)?;
-        Ok(Color::new(self.data[i], self.data[i + 1], self.data[i + 2], self.data[i + 3]))
+        Ok(Color::new(
+            self.data[i],
+            self.data[i + 1],
+            self.data[i + 2],
+            self.data[i + 3],
+        ))
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), DomainError> {
@@ -106,13 +111,25 @@ mod tests {
     #[test]
     fn new_rejects_zero_width() {
         let err = PixelBuffer::new(0, 10).unwrap_err();
-        assert_eq!(err, DomainError::InvalidDimensions { width: 0, height: 10 });
+        assert_eq!(
+            err,
+            DomainError::InvalidDimensions {
+                width: 0,
+                height: 10
+            }
+        );
     }
 
     #[test]
     fn new_rejects_zero_height() {
         let err = PixelBuffer::new(10, 0).unwrap_err();
-        assert_eq!(err, DomainError::InvalidDimensions { width: 10, height: 0 });
+        assert_eq!(
+            err,
+            DomainError::InvalidDimensions {
+                width: 10,
+                height: 0
+            }
+        );
     }
 
     #[test]
@@ -127,14 +144,30 @@ mod tests {
     fn get_pixel_out_of_bounds() {
         let buf = PixelBuffer::new(4, 4).unwrap();
         let err = buf.get_pixel(4, 0).unwrap_err();
-        assert_eq!(err, DomainError::OutOfBounds { x: 4, y: 0, width: 4, height: 4 });
+        assert_eq!(
+            err,
+            DomainError::OutOfBounds {
+                x: 4,
+                y: 0,
+                width: 4,
+                height: 4
+            }
+        );
     }
 
     #[test]
     fn set_pixel_out_of_bounds() {
         let mut buf = PixelBuffer::new(4, 4).unwrap();
         let err = buf.set_pixel(0, 4, Color::BLACK).unwrap_err();
-        assert_eq!(err, DomainError::OutOfBounds { x: 0, y: 4, width: 4, height: 4 });
+        assert_eq!(
+            err,
+            DomainError::OutOfBounds {
+                x: 0,
+                y: 4,
+                width: 4,
+                height: 4
+            }
+        );
     }
 
     #[test]
