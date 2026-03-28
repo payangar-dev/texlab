@@ -1,14 +1,9 @@
 use super::{DomainError, Tool, ToolContext, ToolResult};
 use crate::domain::selection::Selection;
 
+#[derive(Default)]
 pub struct SelectionTool {
     start_pos: Option<(u32, u32)>,
-}
-
-impl Default for SelectionTool {
-    fn default() -> Self {
-        Self { start_pos: None }
-    }
 }
 
 impl Tool for SelectionTool {

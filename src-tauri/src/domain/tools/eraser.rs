@@ -1,14 +1,9 @@
 use super::{DomainError, Tool, ToolContext, ToolResult};
 use crate::domain::color::Color;
 
+#[derive(Default)]
 pub struct EraserTool {
     last_pos: Option<(u32, u32)>,
-}
-
-impl Default for EraserTool {
-    fn default() -> Self {
-        Self { last_pos: None }
-    }
 }
 
 impl EraserTool {

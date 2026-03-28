@@ -1,13 +1,8 @@
 use super::{DomainError, Tool, ToolContext, ToolResult};
 
+#[derive(Default)]
 pub struct LineTool {
     start_pos: Option<(u32, u32)>,
-}
-
-impl Default for LineTool {
-    fn default() -> Self {
-        Self { start_pos: None }
-    }
 }
 
 impl Tool for LineTool {

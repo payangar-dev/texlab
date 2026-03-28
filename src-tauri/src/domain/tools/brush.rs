@@ -1,13 +1,8 @@
 use super::{BrushSize, DomainError, Tool, ToolContext, ToolResult};
 
+#[derive(Default)]
 pub struct BrushTool {
     last_pos: Option<(u32, u32)>,
-}
-
-impl Default for BrushTool {
-    fn default() -> Self {
-        Self { last_pos: None }
-    }
 }
 
 impl BrushTool {

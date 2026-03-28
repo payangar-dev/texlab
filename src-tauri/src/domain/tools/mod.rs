@@ -18,7 +18,7 @@ impl BrushSize {
     pub const DEFAULT: Self = Self(1);
 
     pub fn new(size: u8) -> Result<Self, DomainError> {
-        if size < 1 || size > 16 {
+        if !(1..=16).contains(&size) {
             return Err(DomainError::InvalidBrushSize { size });
         }
         Ok(Self(size))
