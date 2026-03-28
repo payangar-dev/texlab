@@ -19,11 +19,11 @@
 
 **Purpose**: Create all configuration and dependency files needed before any source code can be written or compiled.
 
-- [ ] T001 Create package.json with React 19, TypeScript 5, Vite 6, @tauri-apps/api, @tauri-apps/cli, zustand 5, and npm scripts (dev, build, tauri) at repo root
-- [ ] T002 [P] Create src-tauri/Cargo.toml with tauri ^2.10, serde ^1, serde_json ^1, thiserror ^2, [lib] name="app_lib" crate-type=["staticlib","cdylib","rlib"], and [[bin]] section
-- [ ] T003 [P] Create src-tauri/build.rs with tauri_build::build() call
-- [ ] T004 [P] Create vite.config.ts with @vitejs/plugin-react, clearScreen: false, strictPort: true, server.watch.ignored: ["**/src-tauri/**"], Tauri env-based build targets
-- [ ] T005 [P] Create tsconfig.json and tsconfig.node.json for TypeScript strict mode compilation
+- [x] T001 Create package.json with React 19, TypeScript 5, Vite 6, @tauri-apps/api, @tauri-apps/cli, zustand 5, and npm scripts (dev, build, tauri) at repo root
+- [x] T002 [P] Create src-tauri/Cargo.toml with tauri ^2.10, serde ^1, serde_json ^1, thiserror ^2, [lib] name="app_lib" crate-type=["staticlib","cdylib","rlib"], and [[bin]] section
+- [x] T003 [P] Create src-tauri/build.rs with tauri_build::build() call
+- [x] T004 [P] Create vite.config.ts with @vitejs/plugin-react, clearScreen: false, strictPort: true, server.watch.ignored: ["**/src-tauri/**"], Tauri env-based build targets
+- [x] T005 [P] Create tsconfig.json and tsconfig.node.json for TypeScript strict mode compilation
 
 **Checkpoint**: All config files exist. `npm install` can run successfully.
 
@@ -35,9 +35,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T006 Create src-tauri/tauri.conf.json with identifier "com.texlab.app", productName "TexLab", window config (title: "TexLab", 1280x800 default, 1024x768 minimum), build commands pointing to Vite
-- [ ] T007 [P] Create src-tauri/capabilities/default.json with core:default permission scoped to main window
-- [ ] T008 [P] Create src-tauri/icons/ directory with placeholder icon files required by Tauri build (icon.png, icon.ico at minimum)
+- [x] T006 Create src-tauri/tauri.conf.json with identifier "com.texlab.app", productName "TexLab", window config (title: "TexLab", 1280x800 default, 1024x768 minimum), build commands pointing to Vite
+- [x] T007 [P] Create src-tauri/capabilities/default.json with core:default permission scoped to main window
+- [x] T008 [P] Create src-tauri/icons/ directory with placeholder icon files required by Tauri build (icon.png, icon.ico at minimum)
 
 **Checkpoint**: Tauri configuration complete. Source code implementation can begin.
 
@@ -51,14 +51,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [P] [US1] Create src-tauri/src/error.rs with AppError enum (no variants yet) implementing serde::Serialize
-- [ ] T010 [P] [US1] Create src-tauri/src/state.rs with empty AppState struct wrapped in std::sync::Mutex
-- [ ] T011 [US1] Create src-tauri/src/lib.rs with Tauri builder: manage(Mutex::new(AppState)), generate_handler![], import error and state modules only (architecture layers added in US2)
-- [ ] T012 [US1] Create src-tauri/src/main.rs as thin desktop entry point calling app_lib::run() with windows_subsystem="windows" attribute
-- [ ] T013 [P] [US1] Create index.html at repo root with Vite entry point referencing /src/main.tsx, title "TexLab"
-- [ ] T014 [P] [US1] Create src/App.tsx as empty functional component returning an empty fragment
-- [ ] T015 [US1] Create src/main.tsx with ReactDOM.createRoot rendering App in StrictMode
-- [ ] T016 [US1] Verify: run `cargo build` from src-tauri/ (zero warnings) and `npm run build` from root (zero warnings)
+- [x] T009 [P] [US1] Create src-tauri/src/error.rs with AppError enum (no variants yet) implementing serde::Serialize
+- [x] T010 [P] [US1] Create src-tauri/src/state.rs with empty AppState struct wrapped in std::sync::Mutex
+- [x] T011 [US1] Create src-tauri/src/lib.rs with Tauri builder: manage(Mutex::new(AppState)), generate_handler![], import error and state modules only (architecture layers added in US2)
+- [x] T012 [US1] Create src-tauri/src/main.rs as thin desktop entry point calling app_lib::run() with windows_subsystem="windows" attribute
+- [x] T013 [P] [US1] Create index.html at repo root with Vite entry point referencing /src/main.tsx, title "TexLab"
+- [x] T014 [P] [US1] Create src/App.tsx as empty functional component returning an empty fragment
+- [x] T015 [US1] Create src/main.tsx with ReactDOM.createRoot rendering App in StrictMode
+- [x] T016 [US1] Verify: run `cargo build` from src-tauri/ (zero warnings) and `npm run build` from root (zero warnings)
 
 **Checkpoint**: Application compiles and launches. Window titled "TexLab" appears with blank page. Clean exit on close. SC-001, SC-002, SC-005 validated.
 
@@ -72,10 +72,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T017 [P] [US2] Create 5 backend architecture layer modules in src-tauri/src/: domain/mod.rs, use_cases/mod.rs, infrastructure/mod.rs, commands/mod.rs, mcp/mod.rs — each with a doc comment describing the layer's purpose
-- [ ] T018 [US2] Add mod declarations for all 5 architecture layers in src-tauri/src/lib.rs (domain, use_cases, infrastructure, commands, mcp)
-- [ ] T019 [P] [US2] Create 4 frontend directories with .gitkeep files: src/api/.gitkeep, src/components/.gitkeep, src/hooks/.gitkeep, src/store/.gitkeep
-- [ ] T020 [US2] Verify: all directories from plan.md exist and are non-empty, `cargo build` still zero warnings (SC-003)
+- [x] T017 [P] [US2] Create 5 backend architecture layer modules in src-tauri/src/: domain/mod.rs, use_cases/mod.rs, infrastructure/mod.rs, commands/mod.rs, mcp/mod.rs — each with a doc comment describing the layer's purpose
+- [x] T018 [US2] Add mod declarations for all 5 architecture layers in src-tauri/src/lib.rs (domain, use_cases, infrastructure, commands, mcp)
+- [x] T019 [P] [US2] Create 4 frontend directories with .gitkeep files: src/api/.gitkeep, src/components/.gitkeep, src/hooks/.gitkeep, src/store/.gitkeep
+- [x] T020 [US2] Verify: all directories from plan.md exist and are non-empty, `cargo build` still zero warnings (SC-003)
 
 **Checkpoint**: Full directory structure in place. Architecture boundaries visible in IDE. SC-003 validated.
 
@@ -89,8 +89,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T021 [P] [US3] Create CONTRIBUTING.md at repo root covering: architecture pattern (clean architecture layers), directory roles (each dir's purpose), naming conventions (Rust + TypeScript), development guidelines (how to add a feature, commit conventions), and minimum toolchain versions (Rust ≥ 1.77, Node.js ≥ 20 LTS)
-- [ ] T022 [US3] Review and update CLAUDE.md to ensure it covers all FR-005 requirements for AI agent context (architecture, directory purposes, key rules) — verify no contradictions with CONTRIBUTING.md (SC-004)
+- [x] T021 [P] [US3] Create CONTRIBUTING.md at repo root covering: architecture pattern (clean architecture layers), directory roles (each dir's purpose), naming conventions (Rust + TypeScript), development guidelines (how to add a feature, commit conventions), and minimum toolchain versions (Rust ≥ 1.77, Node.js ≥ 20 LTS)
+- [x] T022 [US3] Review and update CLAUDE.md to ensure it covers all FR-005 requirements for AI agent context (architecture, directory purposes, key rules) — verify no contradictions with CONTRIBUTING.md (SC-004)
 
 **Checkpoint**: Both conventions documents complete. SC-004 validated.
 
@@ -100,7 +100,7 @@
 
 **Purpose**: Final validation across all user stories.
 
-- [ ] T023 Run full quickstart.md verification checklist: app launches, clean exit, cargo build zero warnings, npm run build zero warnings, all directories non-empty, conventions docs complete
+- [x] T023 Run full quickstart.md verification checklist: app launches, clean exit, cargo build zero warnings, npm run build zero warnings, all directories non-empty, conventions docs complete
 
 ---
 

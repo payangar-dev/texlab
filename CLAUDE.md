@@ -20,7 +20,10 @@ src-tauri/src/
   infrastructure/  # I/O adapters (PNG, ZIP, JSON, MCP server)
   commands/        # Thin Tauri command wrappers, delegates to use_cases
   mcp/             # Embedded MCP server (rmcp)
+  error.rs         # AppError enum (serde::Serialize for IPC)
   state.rs         # Mutex<AppState> — single source of truth (frontend + MCP)
+  lib.rs           # Tauri builder, module registration, run()
+  main.rs          # Desktop entry point (thin, calls lib)
 
 src/               # React + TypeScript frontend
   api/             # Typed invoke() wrappers
