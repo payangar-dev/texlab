@@ -90,6 +90,15 @@ impl Layer {
         self.buffer.set_pixel(x, y, color)
     }
 
+    pub fn buffer_mut(&mut self) -> Result<&mut PixelBuffer, DomainError> {
+        if self.locked {
+            return Err(DomainError::LayerLocked {
+                layer_id: self.id.value(),
+            });
+        }
+        Ok(&mut self.buffer)
+    }
+
     pub fn set_opacity(&mut self, value: f32) {
         self.opacity = value.clamp(0.0, 1.0);
     }
@@ -220,5 +229,40 @@ mod tests {
     fn layer_id_value_accessor() {
         let id = LayerId::new(42);
         assert_eq!(id.value(), 42);
+    }
+
+    #[test]
+    fn buffer_mut_unlocked_returns_ok() {
+        let mut layer = test_layer();
+        assert!(layer.buffer_mut().is_ok());
+    }
+
+    #[test]
+    fn buffer_mut_locked_returns_err() {
+        let mut layer = test_layer();
+        layer.set_locked(true);
+        let err = layer.buffer_mut().unwrap_err();
+        assert_eq!(err, DomainError::LayerLocked { layer_id: 1 });
+    }
+
+    #[test]
+    fn buffer_mut_allows_mutation() {
+        let mut layer = test_layer();
+        let buf = layer.buffer_mut().unwrap();
+        buf.set_pixel(0, 0, Color::WHITE).unwrap();
+        assert_eq!(layer.buffer().get_pixel(0, 0).unwrap(), Color::WHITE);
+    }
+
+    #[test]
+    fn buffer_mut_locked_blocks_tool_pattern() {
+        let mut layer = test_layer();
+        layer.set_locked(true);
+        // Simulates what happens when tool code tries to get buffer: error before any tool runs
+        let result = layer.buffer_mut();
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            DomainError::LayerLocked { layer_id: 1 }
+        );
     }
 }

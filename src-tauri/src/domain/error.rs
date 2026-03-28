@@ -29,6 +29,9 @@ pub enum DomainError {
     IoError {
         reason: String,
     },
+    InvalidBrushSize {
+        size: u8,
+    },
 }
 
 impl fmt::Display for DomainError {
@@ -61,6 +64,9 @@ impl fmt::Display for DomainError {
             Self::EmptyNamespace => write!(f, "namespace must not be empty"),
             Self::EmptyPath => write!(f, "path must not be empty"),
             Self::IoError { reason } => write!(f, "I/O error: {reason}"),
+            Self::InvalidBrushSize { size } => {
+                write!(f, "invalid brush size: {size}, must be 1..=16")
+            }
         }
     }
 }
@@ -139,6 +145,12 @@ mod tests {
             reason: "file not found".into(),
         };
         assert_eq!(err.to_string(), "I/O error: file not found");
+    }
+
+    #[test]
+    fn display_invalid_brush_size() {
+        let err = DomainError::InvalidBrushSize { size: 0 };
+        assert_eq!(err.to_string(), "invalid brush size: 0, must be 1..=16");
     }
 
     #[test]
