@@ -17,7 +17,7 @@ Strict Clean Architecture with inward-pointing dependencies. See `.specify/memor
 src-tauri/src/
   domain/          # Pure logic, ZERO external deps (no tauri, no serde, no image)
   use_cases/       # Orchestration, imports ONLY from domain/
-  infrastructure/  # I/O adapters (PNG, ZIP, JSON, MCP server)
+  infrastructure/  # I/O adapters (PNG, ZIP, JSON)
   commands/        # Thin Tauri command wrappers, delegates to use_cases
   mcp/             # Embedded MCP server (rmcp)
   error.rs         # AppError enum (serde::Serialize for IPC)
@@ -33,6 +33,7 @@ src/               # React + TypeScript frontend
 ```
 
 **Key rules**:
+- The app name is **TexLab** (display) / **texlab** (code: crate name, npm package name, identifiers). Never "texture-lab".
 - `domain/` and `use_cases/` MUST NOT import from tauri, serde, image, or any infra crate
 - Tauri commands return `Result<T, AppError>` with owned types (`String`, not `&str`)
 - All commands registered in `generate_handler![]`

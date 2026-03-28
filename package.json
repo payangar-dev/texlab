@@ -1,8 +1,11 @@
 {
-  "name": "texture-lab",
+  "name": "texlab",
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
