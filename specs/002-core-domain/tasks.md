@@ -19,7 +19,7 @@
 
 **Purpose**: Establish domain module structure
 
-- [ ] T001 Create domain module entry point in src-tauri/src/domain/mod.rs — declare submodules (error, color, blend, pixel_buffer, layer, layer_stack, texture, ports) and add public re-exports for all domain types. Reference data-model.md for the complete type list. At this stage, create each submodule file as an empty file so the project compiles.
+- [x] T001 Create domain module entry point in src-tauri/src/domain/mod.rs — declare submodules (error, color, blend, pixel_buffer, layer, layer_stack, texture, ports) and add public re-exports for all domain types. Reference data-model.md for the complete type list. At this stage, create each submodule file as an empty file so the project compiles.
 
 ---
 
@@ -31,8 +31,8 @@
 
 **Independent Test**: `cargo test --lib domain::error` and `cargo test --lib domain::color` pass.
 
-- [ ] T002 [P] [US2] Implement DomainError enum in src-tauri/src/domain/error.rs — Variants: InvalidDimensions { width: u32, height: u32 }, OutOfBounds { x: u32, y: u32, width: u32, height: u32 }, LayerLocked { layer_id: u128 }, LayerNotFound { layer_id: u128 }, InvalidIndex { index: usize, len: usize }, EmptyName. Manual `impl Display` and `impl Error` using only std. Add unit tests for Display output of each variant.
-- [ ] T003 [P] [US2] Implement Color value object in src-tauri/src/domain/color.rs — Struct with r, g, b, a: u8 fields. Derive Clone, Copy, Debug, PartialEq, Eq. Constructor `new(r, g, b, a) -> Color`. Constants: TRANSPARENT (0,0,0,0), BLACK (0,0,0,255), WHITE (255,255,255,255). Unit tests: construction stores correct values, equality works, constants are correct.
+- [x] T002 [P] [US2] Implement DomainError enum in src-tauri/src/domain/error.rs — Variants: InvalidDimensions { width: u32, height: u32 }, OutOfBounds { x: u32, y: u32, width: u32, height: u32 }, LayerLocked { layer_id: u128 }, LayerNotFound { layer_id: u128 }, InvalidIndex { index: usize, len: usize }, EmptyName. Manual `impl Display` and `impl Error` using only std. Add unit tests for Display output of each variant.
+- [x] T003 [P] [US2] Implement Color value object in src-tauri/src/domain/color.rs — Struct with r, g, b, a: u8 fields. Derive Clone, Copy, Debug, PartialEq, Eq. Constructor `new(r, g, b, a) -> Color`. Constants: TRANSPARENT (0,0,0,0), BLACK (0,0,0,255), WHITE (255,255,255,255). Unit tests: construction stores correct values, equality works, constants are correct.
 
 **Checkpoint**: DomainError and Color compile and pass tests. No external crate imports.
 
@@ -44,7 +44,7 @@
 
 **Independent Test**: `cargo test --lib domain::pixel_buffer` passes all scenarios from spec US1.
 
-- [ ] T004 [US1] Implement PixelBuffer in src-tauri/src/domain/pixel_buffer.rs — Struct with width: u32, height: u32, data: Vec<u8>. Constructor `new(width, height) -> Result<Self, DomainError>` rejects zero dimensions, initializes to transparent. Methods: `get_pixel(x, y) -> Result<Color, DomainError>`, `set_pixel(x, y, color) -> Result<(), DomainError>` (both reject out-of-bounds), `fill_rect(x, y, w, h, color)` (clips to bounds silently per research R5), `clone_data() -> Vec<u8>`, `width() -> u32`, `height() -> u32`, `pixels() -> &[u8]` (read-only access to raw data). Unit tests: create valid buffer, reject zero dims, get/set roundtrip, out-of-bounds rejected, fill_rect fills correctly, fill_rect clips at edges, clone_data is independent copy.
+- [x] T004 [US1] Implement PixelBuffer in src-tauri/src/domain/pixel_buffer.rs — Struct with width: u32, height: u32, data: Vec<u8>. Constructor `new(width, height) -> Result<Self, DomainError>` rejects zero dimensions, initializes to transparent. Methods: `get_pixel(x, y) -> Result<Color, DomainError>`, `set_pixel(x, y, color) -> Result<(), DomainError>` (both reject out-of-bounds), `fill_rect(x, y, w, h, color)` (clips to bounds silently per research R5), `clone_data() -> Vec<u8>`, `width() -> u32`, `height() -> u32`, `pixels() -> &[u8]` (read-only access to raw data). Unit tests: create valid buffer, reject zero dims, get/set roundtrip, out-of-bounds rejected, fill_rect fills correctly, fill_rect clips at edges, clone_data is independent copy.
 
 **Checkpoint**: PixelBuffer fully functional. `cargo test --lib domain` passes.
 
@@ -56,8 +56,8 @@
 
 **Independent Test**: `cargo test --lib domain::layer` and `cargo test --lib domain::blend` pass all scenarios from spec US3.
 
-- [ ] T005 [P] [US3] Implement BlendMode enum in src-tauri/src/domain/blend.rs — Variants: Normal, Multiply, Screen, Overlay. Derive Clone, Copy, Debug, PartialEq, Eq. Implement Default = Normal. No blend function yet (that's US4). Unit test: default is Normal.
-- [ ] T006 [US3] Implement LayerId and Layer in src-tauri/src/domain/layer.rs — LayerId: newtype over u128, derive Clone, Copy, Debug, PartialEq, Eq, Hash. Layer struct with fields per data-model.md. Constructor `new(id: LayerId, name: String, width: u32, height: u32) -> Result<Self, DomainError>` creates layer with transparent buffer, opacity 1.0, Normal blend, visible, unlocked; rejects empty name. Methods: `set_pixel(x, y, color) -> Result<(), DomainError>` returns LayerLocked if locked otherwise delegates to buffer, `set_opacity(f32)` clamps to [0.0, 1.0], `set_visible(bool)`, `set_locked(bool)`, `set_blend_mode(BlendMode)`, `set_name(String) -> Result<(), DomainError>` rejects empty, plus getters for all fields. Unit tests: new with defaults, set_pixel works, locked layer rejects writes, opacity clamping, empty name rejected, property getters.
+- [x] T005 [P] [US3] Implement BlendMode enum in src-tauri/src/domain/blend.rs — Variants: Normal, Multiply, Screen, Overlay. Derive Clone, Copy, Debug, PartialEq, Eq. Implement Default = Normal. No blend function yet (that's US4). Unit test: default is Normal.
+- [x] T006 [US3] Implement LayerId and Layer in src-tauri/src/domain/layer.rs — LayerId: newtype over u128, derive Clone, Copy, Debug, PartialEq, Eq, Hash. Layer struct with fields per data-model.md. Constructor `new(id: LayerId, name: String, width: u32, height: u32) -> Result<Self, DomainError>` creates layer with transparent buffer, opacity 1.0, Normal blend, visible, unlocked; rejects empty name. Methods: `set_pixel(x, y, color) -> Result<(), DomainError>` returns LayerLocked if locked otherwise delegates to buffer, `set_opacity(f32)` clamps to [0.0, 1.0], `set_visible(bool)`, `set_locked(bool)`, `set_blend_mode(BlendMode)`, `set_name(String) -> Result<(), DomainError>` rejects empty, plus getters for all fields. Unit tests: new with defaults, set_pixel works, locked layer rejects writes, opacity clamping, empty name rejected, property getters.
 
 **Checkpoint**: Layer and BlendMode fully functional. `cargo test --lib domain` passes.
 
@@ -69,8 +69,8 @@
 
 **Independent Test**: `cargo test --lib domain::blend` and `cargo test --lib domain::layer_stack` pass all scenarios from spec US4.
 
-- [ ] T007 [US4] Implement blend function in src-tauri/src/domain/blend.rs — Function `blend(base: Color, top: Color, mode: BlendMode, opacity: f32) -> Color` applies blend mode formula per research R4 then alpha-composites with Porter-Duff "source over" using opacity. Use u16/f32 intermediates to avoid overflow, clamp results to u8. Unit tests: Normal blend at full opacity = top, Normal at 50% = lerp, Multiply known values (e.g., 200×100/255), Screen known values, Overlay with base < 128 and base >= 128, fully transparent top leaves base unchanged, opacity 0 leaves base unchanged.
-- [ ] T008 [US4] Implement LayerStack in src-tauri/src/domain/layer_stack.rs — Struct with layers: Vec<Layer>. Methods: `new() -> Self`, `add_layer(layer)`, `remove_layer(id) -> Option<Layer>`, `move_layer(from, to) -> Result<(), DomainError>` rejects invalid indices, `get_layer(id) -> Option<&Layer>`, `get_layer_mut(id) -> Option<&mut Layer>`, `len()`, `is_empty()`, `layers() -> &[Layer]`, `composite(width, height) -> PixelBuffer` iterates bottom-to-top, skips hidden/zero-opacity layers, blends each pixel using layer's blend mode and opacity per research R4. Unit tests: empty stack composites to transparent, single layer composite = layer data, two layers Normal blend, hidden layer skipped, zero-opacity layer skipped, Multiply/Screen/Overlay composite results, add/remove/move operations, move with invalid index rejected.
+- [x] T007 [US4] Implement blend function in src-tauri/src/domain/blend.rs — Function `blend(base: Color, top: Color, mode: BlendMode, opacity: f32) -> Color` applies blend mode formula per research R4 then alpha-composites with Porter-Duff "source over" using opacity. Use u16/f32 intermediates to avoid overflow, clamp results to u8. Unit tests: Normal blend at full opacity = top, Normal at 50% = lerp, Multiply known values (e.g., 200×100/255), Screen known values, Overlay with base < 128 and base >= 128, fully transparent top leaves base unchanged, opacity 0 leaves base unchanged.
+- [x] T008 [US4] Implement LayerStack in src-tauri/src/domain/layer_stack.rs — Struct with layers: Vec<Layer>. Methods: `new() -> Self`, `add_layer(layer)`, `remove_layer(id) -> Option<Layer>`, `move_layer(from, to) -> Result<(), DomainError>` rejects invalid indices, `get_layer(id) -> Option<&Layer>`, `get_layer_mut(id) -> Option<&mut Layer>`, `len()`, `is_empty()`, `layers() -> &[Layer]`, `composite(width, height) -> PixelBuffer` iterates bottom-to-top, skips hidden/zero-opacity layers, blends each pixel using layer's blend mode and opacity per research R4. Unit tests: empty stack composites to transparent, single layer composite = layer data, two layers Normal blend, hidden layer skipped, zero-opacity layer skipped, Multiply/Screen/Overlay composite results, add/remove/move operations, move with invalid index rejected.
 
 **Checkpoint**: Full compositing pipeline works. `cargo test --lib domain` passes.
 
@@ -82,7 +82,7 @@
 
 **Independent Test**: `cargo test --lib domain::texture` passes all scenarios from spec US5.
 
-- [ ] T009 [US5] Implement Texture in src-tauri/src/domain/texture.rs — Struct with namespace: String, path: String, width: u32, height: u32, layer_stack: LayerStack, dirty: bool. Constructor `new(namespace, path, width, height) -> Result<Self, DomainError>` rejects empty namespace/path and zero dimensions, starts clean (dirty=false) with empty stack. Methods: `mark_dirty()`, `mark_saved()`, `is_dirty() -> bool`, `add_layer(id, name) -> Result<(), DomainError>` creates a layer with texture dimensions and adds to stack then marks dirty, `layer_stack() -> &LayerStack`, `layer_stack_mut() -> &mut LayerStack`, `namespace()`, `path()`, `width()`, `height()` getters. Unit tests: new with valid data, reject empty namespace, reject empty path, reject zero dimensions, starts not dirty, mark_dirty/mark_saved transitions, add_layer marks dirty and creates correct-sized layer.
+- [x] T009 [US5] Implement Texture in src-tauri/src/domain/texture.rs — Struct with namespace: String, path: String, width: u32, height: u32, layer_stack: LayerStack, dirty: bool. Constructor `new(namespace, path, width, height) -> Result<Self, DomainError>` rejects empty namespace/path and zero dimensions, starts clean (dirty=false) with empty stack. Methods: `mark_dirty()`, `mark_saved()`, `is_dirty() -> bool`, `add_layer(id, name) -> Result<(), DomainError>` creates a layer with texture dimensions and adds to stack then marks dirty, `layer_stack() -> &LayerStack`, `layer_stack_mut() -> &mut LayerStack`, `namespace()`, `path()`, `width()`, `height()` getters. Unit tests: new with valid data, reject empty namespace, reject empty path, reject zero dimensions, starts not dirty, mark_dirty/mark_saved transitions, add_layer marks dirty and creates correct-sized layer.
 
 **Checkpoint**: Texture document model complete. `cargo test --lib domain` passes.
 
@@ -94,7 +94,7 @@
 
 **Independent Test**: Port traits compile and can be implemented by test doubles.
 
-- [ ] T010 [US6] Define port traits and TextureEntry in src-tauri/src/domain/ports.rs — TextureEntry value object: namespace: String, path: String (derive Clone, Debug, PartialEq). Traits: `ImageReader` with `fn read(&self, path: &str) -> Result<PixelBuffer, DomainError>`, `ImageWriter` with `fn write(&self, path: &str, buffer: &PixelBuffer) -> Result<(), DomainError>`, `PackScanner` with `fn scan(&self, path: &str) -> Result<Vec<TextureEntry>, DomainError>`. Unit tests: implement minimal mock for each trait (e.g., MockImageReader that returns a 2×2 buffer) and verify the mock satisfies the trait contract.
+- [x] T010 [US6] Define port traits and TextureEntry in src-tauri/src/domain/ports.rs — TextureEntry value object: namespace: String, path: String (derive Clone, Debug, PartialEq). Traits: `ImageReader` with `fn read(&self, path: &str) -> Result<PixelBuffer, DomainError>`, `ImageWriter` with `fn write(&self, path: &str, buffer: &PixelBuffer) -> Result<(), DomainError>`, `PackScanner` with `fn scan(&self, path: &str) -> Result<Vec<TextureEntry>, DomainError>`. Unit tests: implement minimal mock for each trait (e.g., MockImageReader that returns a 2×2 buffer) and verify the mock satisfies the trait contract.
 
 **Checkpoint**: All port traits defined and testable via mocks. `cargo test --lib domain` passes.
 
@@ -104,8 +104,8 @@
 
 **Purpose**: Final validation and compliance checks
 
-- [ ] T011 Finalize domain module re-exports in src-tauri/src/domain/mod.rs — ensure all public types (Color, PixelBuffer, BlendMode, LayerId, Layer, LayerStack, Texture, DomainError, TextureEntry, ImageReader, ImageWriter, PackScanner) are re-exported. Run `cargo test --lib` to verify the full test suite passes. Verify `cargo clippy -- -D warnings` passes on domain code.
-- [ ] T012 Audit domain/ for zero-dependency compliance — grep all .rs files in src-tauri/src/domain/ for `use` statements. Verify none reference tauri, serde, image, thiserror, uuid, or any external crate. Verify no `#[derive(Serialize)]` or `#[derive(Deserialize)]` on any domain type. Document compliance in a comment at the top of src-tauri/src/domain/mod.rs.
+- [x] T011 Finalize domain module re-exports in src-tauri/src/domain/mod.rs — ensure all public types (Color, PixelBuffer, BlendMode, LayerId, Layer, LayerStack, Texture, DomainError, TextureEntry, ImageReader, ImageWriter, PackScanner) are re-exported. Run `cargo test --lib` to verify the full test suite passes. Verify `cargo clippy -- -D warnings` passes on domain code.
+- [x] T012 Audit domain/ for zero-dependency compliance — grep all .rs files in src-tauri/src/domain/ for `use` statements. Verify none reference tauri, serde, image, thiserror, uuid, or any external crate. Verify no `#[derive(Serialize)]` or `#[derive(Deserialize)]` on any domain type. Document compliance in a comment at the top of src-tauri/src/domain/mod.rs.
 
 ---
 
