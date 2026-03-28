@@ -14,7 +14,9 @@ pub mod layer;
 pub mod layer_stack;
 pub mod pixel_buffer;
 pub mod ports;
+pub mod selection;
 pub mod texture;
+pub mod tools;
 
 pub use blend::{blend, BlendMode};
 pub use color::Color;
@@ -23,4 +25,6 @@ pub use layer::{Layer, LayerId};
 pub use layer_stack::LayerStack;
 pub use pixel_buffer::PixelBuffer;
 pub use ports::{ImageReader, ImageWriter, PackScanner, TextureEntry};
+pub use selection::Selection;
 pub use texture::Texture;
+pub use tools::{BrushSize, ToolContext, ToolResult};
