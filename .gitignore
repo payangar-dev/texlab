@@ -34,6 +34,7 @@ npm-debug.log*
 
 # Local settings
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # Speckit
 .specify/extensions/.cache/
