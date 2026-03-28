@@ -9,6 +9,9 @@ pub enum DomainError {
     LayerNotFound { layer_id: u128 },
     InvalidIndex { index: usize, len: usize },
     EmptyName,
+    EmptyNamespace,
+    EmptyPath,
+    IoError { reason: String },
 }
 
 impl fmt::Display for DomainError {
@@ -30,6 +33,9 @@ impl fmt::Display for DomainError {
                 write!(f, "index {index} out of range for stack of length {len}")
             }
             Self::EmptyName => write!(f, "name must not be empty"),
+            Self::EmptyNamespace => write!(f, "namespace must not be empty"),
+            Self::EmptyPath => write!(f, "path must not be empty"),
+            Self::IoError { reason } => write!(f, "I/O error: {reason}"),
         }
     }
 }
@@ -77,8 +83,32 @@ mod tests {
     }
 
     #[test]
+    fn display_empty_namespace() {
+        let err = DomainError::EmptyNamespace;
+        assert_eq!(err.to_string(), "namespace must not be empty");
+    }
+
+    #[test]
+    fn display_empty_path() {
+        let err = DomainError::EmptyPath;
+        assert_eq!(err.to_string(), "path must not be empty");
+    }
+
+    #[test]
+    fn display_io_error() {
+        let err = DomainError::IoError { reason: "file not found".into() };
+        assert_eq!(err.to_string(), "I/O error: file not found");
+    }
+
+    #[test]
     fn error_trait_is_implemented() {
         let err: &dyn std::error::Error = &DomainError::EmptyName;
         assert!(err.source().is_none());
+    }
+
+    #[test]
+    fn error_is_cloneable() {
+        let err = DomainError::EmptyName;
+        assert_eq!(err.clone(), err);
     }
 }

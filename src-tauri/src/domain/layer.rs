@@ -6,7 +6,17 @@ use super::pixel_buffer::PixelBuffer;
 /// Unique layer identifier. Newtype over `u128` for UUID compatibility
 /// without importing the `uuid` crate into the domain.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct LayerId(pub u128);
+pub struct LayerId(u128);
+
+impl LayerId {
+    pub fn new(value: u128) -> Self {
+        Self(value)
+    }
+
+    pub fn value(self) -> u128 {
+        self.0
+    }
+}
 
 /// Named editing surface with pixel buffer and compositing properties.
 #[derive(Debug)]
@@ -78,7 +88,7 @@ impl Layer {
 
     pub fn set_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), DomainError> {
         if self.locked {
-            return Err(DomainError::LayerLocked { layer_id: self.id.0 });
+            return Err(DomainError::LayerLocked { layer_id: self.id.value() });
         }
         self.buffer.set_pixel(x, y, color)
     }
@@ -113,13 +123,13 @@ mod tests {
     use super::*;
 
     fn test_layer() -> Layer {
-        Layer::new(LayerId(1), "test".to_string(), 4, 4).unwrap()
+        Layer::new(LayerId::new(1), "test".to_string(), 4, 4).unwrap()
     }
 
     #[test]
     fn new_with_defaults() {
         let layer = test_layer();
-        assert_eq!(layer.id(), LayerId(1));
+        assert_eq!(layer.id(), LayerId::new(1));
         assert_eq!(layer.name(), "test");
         assert_eq!(layer.opacity(), 1.0);
         assert_eq!(layer.blend_mode(), BlendMode::Normal);
@@ -131,7 +141,7 @@ mod tests {
 
     #[test]
     fn new_rejects_empty_name() {
-        let err = Layer::new(LayerId(1), String::new(), 4, 4).unwrap_err();
+        let err = Layer::new(LayerId::new(1), String::new(), 4, 4).unwrap_err();
         assert_eq!(err, DomainError::EmptyName);
     }
 
@@ -148,6 +158,16 @@ mod tests {
         layer.set_locked(true);
         let err = layer.set_pixel(0, 0, Color::WHITE).unwrap_err();
         assert_eq!(err, DomainError::LayerLocked { layer_id: 1 });
+    }
+
+    #[test]
+    fn set_pixel_propagates_out_of_bounds() {
+        let mut layer = test_layer();
+        let err = layer.set_pixel(10, 10, Color::WHITE).unwrap_err();
+        assert_eq!(
+            err,
+            DomainError::OutOfBounds { x: 10, y: 10, width: 4, height: 4 }
+        );
     }
 
     #[test]
@@ -192,5 +212,11 @@ mod tests {
         let mut layer = test_layer();
         layer.set_blend_mode(BlendMode::Multiply);
         assert_eq!(layer.blend_mode(), BlendMode::Multiply);
+    }
+
+    #[test]
+    fn layer_id_value_accessor() {
+        let id = LayerId::new(42);
+        assert_eq!(id.value(), 42);
     }
 }

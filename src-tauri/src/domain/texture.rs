@@ -1,8 +1,13 @@
 use super::error::DomainError;
 use super::layer::{Layer, LayerId};
 use super::layer_stack::LayerStack;
+use super::pixel_buffer::PixelBuffer;
 
 /// Top-level document model. Owns canvas dimensions and layer stack.
+///
+/// Dirty tracking is caller-managed: mutations via `layer_stack_mut()` do NOT
+/// automatically set dirty. The orchestration layer must call `mark_dirty()`
+/// after any mutation.
 #[derive(Debug)]
 pub struct Texture {
     namespace: String,
@@ -21,8 +26,11 @@ impl Texture {
         width: u32,
         height: u32,
     ) -> Result<Self, DomainError> {
-        if namespace.is_empty() || path.is_empty() {
-            return Err(DomainError::EmptyName);
+        if namespace.is_empty() {
+            return Err(DomainError::EmptyNamespace);
+        }
+        if path.is_empty() {
+            return Err(DomainError::EmptyPath);
         }
         if width == 0 || height == 0 {
             return Err(DomainError::InvalidDimensions { width, height });
@@ -69,6 +77,10 @@ impl Texture {
         &self.layer_stack
     }
 
+    /// Grants mutable access to the layer stack.
+    ///
+    /// **Warning**: Mutations through this reference do NOT auto-set `dirty`.
+    /// The caller MUST call `mark_dirty()` after any modification.
     pub fn layer_stack_mut(&mut self) -> &mut LayerStack {
         &mut self.layer_stack
     }
@@ -81,11 +93,17 @@ impl Texture {
         self.dirty = true;
         Ok(())
     }
+
+    /// Composites all layers into a flattened pixel buffer using the texture dimensions.
+    pub fn composite(&self) -> Result<PixelBuffer, DomainError> {
+        self.layer_stack.composite(self.width, self.height)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::color::Color;
 
     fn test_texture() -> Texture {
         Texture::new("minecraft".into(), "textures/block/stone.png".into(), 16, 16).unwrap()
@@ -105,13 +123,13 @@ mod tests {
     #[test]
     fn rejects_empty_namespace() {
         let err = Texture::new(String::new(), "path".into(), 16, 16).unwrap_err();
-        assert_eq!(err, DomainError::EmptyName);
+        assert_eq!(err, DomainError::EmptyNamespace);
     }
 
     #[test]
     fn rejects_empty_path() {
         let err = Texture::new("ns".into(), String::new(), 16, 16).unwrap_err();
-        assert_eq!(err, DomainError::EmptyName);
+        assert_eq!(err, DomainError::EmptyPath);
     }
 
     #[test]
@@ -138,7 +156,7 @@ mod tests {
     #[test]
     fn add_layer_marks_dirty() {
         let mut tex = test_texture();
-        tex.add_layer(LayerId(1), "base".into()).unwrap();
+        tex.add_layer(LayerId::new(1), "base".into()).unwrap();
         assert!(tex.is_dirty());
         assert_eq!(tex.layer_stack().len(), 1);
     }
@@ -146,9 +164,41 @@ mod tests {
     #[test]
     fn add_layer_creates_correct_size() {
         let mut tex = test_texture();
-        tex.add_layer(LayerId(1), "base".into()).unwrap();
-        let layer = tex.layer_stack().get_layer(LayerId(1)).unwrap();
+        tex.add_layer(LayerId::new(1), "base".into()).unwrap();
+        let layer = tex.layer_stack().get_layer(LayerId::new(1)).unwrap();
         assert_eq!(layer.buffer().width(), 16);
         assert_eq!(layer.buffer().height(), 16);
+    }
+
+    #[test]
+    fn add_layer_rejects_empty_name() {
+        let mut tex = test_texture();
+        let err = tex.add_layer(LayerId::new(1), String::new()).unwrap_err();
+        assert_eq!(err, DomainError::EmptyName);
+        assert!(tex.layer_stack().is_empty()); // no partial mutation
+    }
+
+    #[test]
+    fn composite_delegates_to_layer_stack() {
+        let mut tex = test_texture();
+        tex.add_layer(LayerId::new(1), "base".into()).unwrap();
+        let result = tex.composite().unwrap();
+        assert_eq!(result.width(), 16);
+        assert_eq!(result.height(), 16);
+    }
+
+    #[test]
+    fn pixel_edit_via_layer_stack_mut_requires_manual_dirty() {
+        let mut tex = test_texture();
+        tex.add_layer(LayerId::new(1), "base".into()).unwrap();
+        tex.mark_saved(); // reset dirty
+
+        // Mutate via layer_stack_mut — dirty is NOT auto-set
+        let layer = tex.layer_stack_mut().get_layer_mut(LayerId::new(1)).unwrap();
+        layer.set_pixel(0, 0, Color::WHITE).unwrap();
+        assert!(!tex.is_dirty()); // still clean — caller-managed
+
+        tex.mark_dirty(); // caller responsibility
+        assert!(tex.is_dirty());
     }
 }

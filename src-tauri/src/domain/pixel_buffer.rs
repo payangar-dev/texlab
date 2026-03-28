@@ -2,6 +2,9 @@ use super::color::Color;
 use super::error::DomainError;
 
 /// Rectangular grid of RGBA pixels.
+///
+/// Byte layout: row-major, 4 bytes per pixel in RGBA order.
+/// Total size: `width * height * 4` bytes.
 #[derive(Debug, Clone)]
 pub struct PixelBuffer {
     width: u32,
@@ -32,6 +35,7 @@ impl PixelBuffer {
         self.height
     }
 
+    /// Returns raw RGBA pixel data. Layout: row-major, 4 bytes per pixel (R, G, B, A).
     pub fn pixels(&self) -> &[u8] {
         &self.data
     }
@@ -55,10 +59,10 @@ impl PixelBuffer {
 
     pub fn set_pixel(&mut self, x: u32, y: u32, color: Color) -> Result<(), DomainError> {
         let i = self.index(x, y)?;
-        self.data[i] = color.r;
-        self.data[i + 1] = color.g;
-        self.data[i + 2] = color.b;
-        self.data[i + 3] = color.a;
+        self.data[i] = color.r();
+        self.data[i + 1] = color.g();
+        self.data[i + 2] = color.b();
+        self.data[i + 3] = color.a();
         Ok(())
     }
 
@@ -72,10 +76,10 @@ impl PixelBuffer {
         for py in y_start..y_end {
             for px in x_start..x_end {
                 let i = ((py as usize) * (self.width as usize) + (px as usize)) * 4;
-                self.data[i] = color.r;
-                self.data[i + 1] = color.g;
-                self.data[i + 2] = color.b;
-                self.data[i + 3] = color.a;
+                self.data[i] = color.r();
+                self.data[i + 1] = color.g();
+                self.data[i + 2] = color.b();
+                self.data[i + 3] = color.a();
             }
         }
     }
@@ -139,11 +143,8 @@ mod tests {
         let blue = Color::new(0, 0, 255, 255);
         buf.fill_rect(1, 1, 2, 2, blue);
 
-        // Inside the rect
         assert_eq!(buf.get_pixel(1, 1).unwrap(), blue);
         assert_eq!(buf.get_pixel(2, 2).unwrap(), blue);
-
-        // Outside the rect
         assert_eq!(buf.get_pixel(0, 0).unwrap(), Color::TRANSPARENT);
         assert_eq!(buf.get_pixel(3, 3).unwrap(), Color::TRANSPARENT);
     }
@@ -167,16 +168,29 @@ mod tests {
     }
 
     #[test]
+    fn fill_rect_zero_width_is_noop() {
+        let mut buf = PixelBuffer::new(4, 4).unwrap();
+        buf.fill_rect(0, 0, 0, 4, Color::WHITE);
+        assert!(buf.pixels().iter().all(|&b| b == 0));
+    }
+
+    #[test]
+    fn fill_rect_zero_height_is_noop() {
+        let mut buf = PixelBuffer::new(4, 4).unwrap();
+        buf.fill_rect(0, 0, 4, 0, Color::WHITE);
+        assert!(buf.pixels().iter().all(|&b| b == 0));
+    }
+
+    #[test]
     fn clone_data_is_independent() {
         let mut buf = PixelBuffer::new(2, 2).unwrap();
         buf.set_pixel(0, 0, Color::WHITE).unwrap();
         let cloned = buf.clone_data();
         buf.set_pixel(0, 0, Color::BLACK).unwrap();
 
-        // Cloned data still has WHITE at (0,0)
-        assert_eq!(cloned[0], 255); // r
-        assert_eq!(cloned[1], 255); // g
-        assert_eq!(cloned[2], 255); // b
-        assert_eq!(cloned[3], 255); // a
+        assert_eq!(cloned[0], 255);
+        assert_eq!(cloned[1], 255);
+        assert_eq!(cloned[2], 255);
+        assert_eq!(cloned[3], 255);
     }
 }

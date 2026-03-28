@@ -1,12 +1,13 @@
-/// Immutable RGBA color value object.
+/// RGBA color value object.
 ///
 /// Each channel is a `u8` (0-255), making invalid values unrepresentable.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Fields are private — use [`Color::new`] to construct and accessor methods to read.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Color {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
 }
 
 impl Color {
@@ -17,6 +18,22 @@ impl Color {
     pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
+
+    pub fn r(&self) -> u8 {
+        self.r
+    }
+
+    pub fn g(&self) -> u8 {
+        self.g
+    }
+
+    pub fn b(&self) -> u8 {
+        self.b
+    }
+
+    pub fn a(&self) -> u8 {
+        self.a
+    }
 }
 
 #[cfg(test)]
@@ -26,10 +43,10 @@ mod tests {
     #[test]
     fn new_stores_correct_values() {
         let c = Color::new(10, 20, 30, 255);
-        assert_eq!(c.r, 10);
-        assert_eq!(c.g, 20);
-        assert_eq!(c.b, 30);
-        assert_eq!(c.a, 255);
+        assert_eq!(c.r(), 10);
+        assert_eq!(c.g(), 20);
+        assert_eq!(c.b(), 30);
+        assert_eq!(c.a(), 255);
     }
 
     #[test]
@@ -66,5 +83,14 @@ mod tests {
         let a = Color::new(1, 2, 3, 4);
         let b = a;
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn hash_is_consistent_with_equality() {
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        set.insert(Color::new(10, 20, 30, 255));
+        assert!(set.contains(&Color::new(10, 20, 30, 255)));
+        assert!(!set.contains(&Color::new(10, 20, 30, 254)));
     }
 }

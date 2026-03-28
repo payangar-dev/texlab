@@ -19,9 +19,13 @@ impl LayerStack {
         self.layers.push(layer);
     }
 
-    pub fn remove_layer(&mut self, id: LayerId) -> Option<Layer> {
-        let pos = self.layers.iter().position(|l| l.id() == id)?;
-        Some(self.layers.remove(pos))
+    pub fn remove_layer(&mut self, id: LayerId) -> Result<Layer, DomainError> {
+        let pos = self
+            .layers
+            .iter()
+            .position(|l| l.id() == id)
+            .ok_or(DomainError::LayerNotFound { layer_id: id.value() })?;
+        Ok(self.layers.remove(pos))
     }
 
     pub fn move_layer(&mut self, from: usize, to: usize) -> Result<(), DomainError> {
@@ -58,26 +62,35 @@ impl LayerStack {
     }
 
     /// Composites all visible layers bottom-to-top into a flattened buffer.
-    pub fn composite(&self, width: u32, height: u32) -> PixelBuffer {
-        let mut result = PixelBuffer::new(width, height)
-            .expect("composite dimensions must be > 0");
+    ///
+    /// Returns an error if dimensions are zero or if any layer has
+    /// mismatched dimensions.
+    pub fn composite(&self, width: u32, height: u32) -> Result<PixelBuffer, DomainError> {
+        let mut result = PixelBuffer::new(width, height)?;
 
         for layer in &self.layers {
             if !layer.is_visible() || layer.opacity() <= 0.0 {
                 continue;
             }
 
+            if layer.buffer().width() != width || layer.buffer().height() != height {
+                return Err(DomainError::InvalidDimensions {
+                    width: layer.buffer().width(),
+                    height: layer.buffer().height(),
+                });
+            }
+
             for y in 0..height {
                 for x in 0..width {
-                    let base = result.get_pixel(x, y).unwrap();
-                    let top = layer.buffer().get_pixel(x, y).unwrap();
+                    let base = result.get_pixel(x, y)?;
+                    let top = layer.buffer().get_pixel(x, y)?;
                     let blended = blend::blend(base, top, layer.blend_mode(), layer.opacity());
-                    result.set_pixel(x, y, blended).unwrap();
+                    result.set_pixel(x, y, blended)?;
                 }
             }
         }
 
-        result
+        Ok(result)
     }
 }
 
@@ -94,7 +107,7 @@ mod tests {
     use crate::domain::color::Color;
 
     fn make_layer(id: u128, name: &str, w: u32, h: u32) -> Layer {
-        Layer::new(LayerId(id), name.to_string(), w, h).unwrap()
+        Layer::new(LayerId::new(id), name.to_string(), w, h).unwrap()
     }
 
     fn solid_layer(id: u128, name: &str, w: u32, h: u32, color: Color) -> Layer {
@@ -110,7 +123,7 @@ mod tests {
     #[test]
     fn empty_stack_composites_to_transparent() {
         let stack = LayerStack::new();
-        let result = stack.composite(4, 4);
+        let result = stack.composite(4, 4).unwrap();
         for y in 0..4 {
             for x in 0..4 {
                 assert_eq!(result.get_pixel(x, y).unwrap(), Color::TRANSPARENT);
@@ -124,7 +137,7 @@ mod tests {
         let layer = solid_layer(1, "red", 2, 2, red);
         let mut stack = LayerStack::new();
         stack.add_layer(layer);
-        let result = stack.composite(2, 2);
+        let result = stack.composite(2, 2).unwrap();
         assert_eq!(result.get_pixel(0, 0).unwrap(), red);
         assert_eq!(result.get_pixel(1, 1).unwrap(), red);
     }
@@ -141,8 +154,7 @@ mod tests {
         stack.add_layer(bottom);
         stack.add_layer(top);
 
-        let result = stack.composite(2, 2);
-        // Top red at full opacity covers bottom blue completely
+        let result = stack.composite(2, 2).unwrap();
         assert_eq!(result.get_pixel(0, 0).unwrap(), red);
     }
 
@@ -159,7 +171,7 @@ mod tests {
         stack.add_layer(bottom);
         stack.add_layer(top);
 
-        let result = stack.composite(2, 2);
+        let result = stack.composite(2, 2).unwrap();
         assert_eq!(result.get_pixel(0, 0).unwrap(), blue);
     }
 
@@ -176,7 +188,7 @@ mod tests {
         stack.add_layer(bottom);
         stack.add_layer(top);
 
-        let result = stack.composite(2, 2);
+        let result = stack.composite(2, 2).unwrap();
         assert_eq!(result.get_pixel(0, 0).unwrap(), blue);
     }
 
@@ -193,12 +205,11 @@ mod tests {
         stack.add_layer(bottom);
         stack.add_layer(top);
 
-        let result = stack.composite(1, 1);
+        let result = stack.composite(1, 1).unwrap();
         let pixel = result.get_pixel(0, 0).unwrap();
-        // (200*100)/255=78, (100*200)/255=78, (50*255)/255=50
-        assert_eq!(pixel.r, 78);
-        assert_eq!(pixel.g, 78);
-        assert_eq!(pixel.b, 50);
+        assert_eq!(pixel.r(), 78);
+        assert_eq!(pixel.g(), 78);
+        assert_eq!(pixel.b(), 50);
     }
 
     #[test]
@@ -214,10 +225,9 @@ mod tests {
         stack.add_layer(bottom);
         stack.add_layer(top);
 
-        let result = stack.composite(1, 1);
+        let result = stack.composite(1, 1).unwrap();
         let pixel = result.get_pixel(0, 0).unwrap();
-        // screen: 255 - ((255-100)*(255-100))/255 = 161
-        assert_eq!(pixel.r, 161);
+        assert_eq!(pixel.r(), 161);
     }
 
     #[test]
@@ -233,12 +243,10 @@ mod tests {
         stack.add_layer(bottom);
         stack.add_layer(top);
 
-        let result = stack.composite(1, 1);
+        let result = stack.composite(1, 1).unwrap();
         let pixel = result.get_pixel(0, 0).unwrap();
-        // base.r=50 (<128): (2*50*200)/255 = 78
-        assert_eq!(pixel.r, 78);
-        // base.g=200 (>=128): 255 - (2*(255-200)*(255-100))/255 = 255 - (2*55*155)/255 = 255-66 = 189
-        assert_eq!(pixel.g, 189);
+        assert_eq!(pixel.r(), 78);
+        assert_eq!(pixel.g(), 189);
     }
 
     #[test]
@@ -252,12 +260,29 @@ mod tests {
         stack.add_layer(layer_a);
         stack.add_layer(layer_b);
 
-        let result = stack.composite(2, 2);
+        let result = stack.composite(2, 2).unwrap();
         for y in 0..2 {
             for x in 0..2 {
                 assert_eq!(result.get_pixel(x, y).unwrap(), Color::TRANSPARENT);
             }
         }
+    }
+
+    #[test]
+    fn composite_rejects_zero_dimensions() {
+        let stack = LayerStack::new();
+        let err = stack.composite(0, 4).unwrap_err();
+        assert_eq!(err, DomainError::InvalidDimensions { width: 0, height: 4 });
+    }
+
+    #[test]
+    fn composite_rejects_dimension_mismatch() {
+        let layer = solid_layer(1, "small", 2, 2, Color::WHITE);
+        let mut stack = LayerStack::new();
+        stack.add_layer(layer);
+
+        let err = stack.composite(4, 4).unwrap_err();
+        assert_eq!(err, DomainError::InvalidDimensions { width: 2, height: 2 });
     }
 
     #[test]
@@ -269,11 +294,17 @@ mod tests {
         stack.add_layer(make_layer(2, "second", 2, 2));
         assert_eq!(stack.len(), 2);
 
-        let removed = stack.remove_layer(LayerId(1)).unwrap();
+        let removed = stack.remove_layer(LayerId::new(1)).unwrap();
         assert_eq!(removed.name(), "first");
         assert_eq!(stack.len(), 1);
+    }
 
-        assert!(stack.remove_layer(LayerId(99)).is_none());
+    #[test]
+    fn remove_layer_not_found() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+        let err = stack.remove_layer(LayerId::new(99)).unwrap_err();
+        assert_eq!(err, DomainError::LayerNotFound { layer_id: 99 });
     }
 
     #[test]
@@ -283,7 +314,6 @@ mod tests {
         stack.add_layer(make_layer(2, "b", 2, 2));
         stack.add_layer(make_layer(3, "c", 2, 2));
 
-        // Move bottom (0) to top (2)
         stack.move_layer(0, 2).unwrap();
         assert_eq!(stack.layers()[0].name(), "b");
         assert_eq!(stack.layers()[1].name(), "c");
@@ -291,7 +321,7 @@ mod tests {
     }
 
     #[test]
-    fn move_layer_invalid_index() {
+    fn move_layer_to_invalid_index() {
         let mut stack = LayerStack::new();
         stack.add_layer(make_layer(1, "a", 2, 2));
         let err = stack.move_layer(0, 5).unwrap_err();
@@ -299,19 +329,27 @@ mod tests {
     }
 
     #[test]
+    fn move_layer_from_invalid_index() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+        let err = stack.move_layer(5, 0).unwrap_err();
+        assert_eq!(err, DomainError::InvalidIndex { index: 5, len: 1 });
+    }
+
+    #[test]
     fn get_layer_by_id() {
         let mut stack = LayerStack::new();
         stack.add_layer(make_layer(42, "target", 2, 2));
-        assert!(stack.get_layer(LayerId(42)).is_some());
-        assert!(stack.get_layer(LayerId(99)).is_none());
+        assert!(stack.get_layer(LayerId::new(42)).is_some());
+        assert!(stack.get_layer(LayerId::new(99)).is_none());
     }
 
     #[test]
     fn get_layer_mut_by_id() {
         let mut stack = LayerStack::new();
         stack.add_layer(make_layer(42, "target", 2, 2));
-        let layer = stack.get_layer_mut(LayerId(42)).unwrap();
+        let layer = stack.get_layer_mut(LayerId::new(42)).unwrap();
         layer.set_name("modified".to_string()).unwrap();
-        assert_eq!(stack.get_layer(LayerId(42)).unwrap().name(), "modified");
+        assert_eq!(stack.get_layer(LayerId::new(42)).unwrap().name(), "modified");
     }
 }
