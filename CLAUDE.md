@@ -72,6 +72,8 @@ src/               # React + TypeScript frontend
 ## Active Technologies
 - Rust ≥ 1.77 (backend), TypeScript ^5.7 (frontend), Node.js ≥ 20 LTS + tauri ^2.10, react ^19.2, vite ^6.0, zustand ^5.0 (see constitution for full list) (001-project-scaffolding)
 - File system only (project files, .texlab archives — future features) (001-project-scaffolding)
+- Rust ≥ 1.77 + None (domain layer — std only) (002-core-domain)
+- N/A (no I/O in domain) (002-core-domain)
 
 ## Recent Changes
 - 001-project-scaffolding: Added Rust ≥ 1.77 (backend), TypeScript ^5.7 (frontend), Node.js ≥ 20 LTS + tauri ^2.10, react ^19.2, vite ^6.0, zustand ^5.0 (see constitution for full list)
