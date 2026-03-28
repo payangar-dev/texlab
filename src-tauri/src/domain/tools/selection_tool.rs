@@ -63,8 +63,8 @@ impl Tool for SelectionTool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::{BrushSize, ToolContext, ToolResult};
+    use super::*;
     use crate::domain::color::Color;
     use crate::domain::pixel_buffer::PixelBuffer;
     use crate::domain::selection::Selection;

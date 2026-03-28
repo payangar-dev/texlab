@@ -52,7 +52,9 @@ impl Tool for LineTool {
                 && (px as u32) < ctx.buffer.width()
                 && (py as u32) < ctx.buffer.height()
             {
-                ctx.buffer.set_pixel(px as u32, py as u32, ctx.color).unwrap();
+                ctx.buffer
+                    .set_pixel(px as u32, py as u32, ctx.color)
+                    .unwrap();
             }
         }
 
@@ -224,9 +226,7 @@ mod tests {
         let mut tool = LineTool::default();
 
         tool.on_press(&mut make_ctx(&mut buf, color), 0, 0).unwrap();
-        let result = tool
-            .on_drag(&mut make_ctx(&mut buf, color), 5, 5)
-            .unwrap();
+        let result = tool.on_drag(&mut make_ctx(&mut buf, color), 5, 5).unwrap();
 
         assert_eq!(result, ToolResult::NoOp);
     }

@@ -89,7 +89,7 @@ mod tests {
         assert_eq!(sel.top(), 2);
         assert_eq!(sel.right(), 4);
         assert_eq!(sel.bottom(), 6);
-        assert_eq!(sel.width(), 4);  // 4 - 1 + 1 = 4
+        assert_eq!(sel.width(), 4); // 4 - 1 + 1 = 4
         assert_eq!(sel.height(), 5); // 6 - 2 + 1 = 5
     }
 
@@ -102,19 +102,19 @@ mod tests {
     #[test]
     fn contains_edge() {
         let sel = Selection::new(2, 3, 8, 7);
-        assert!(sel.contains(2, 3));   // top-left corner
-        assert!(sel.contains(8, 7));   // bottom-right corner
-        assert!(sel.contains(2, 7));   // bottom-left corner
-        assert!(sel.contains(8, 3));   // top-right corner
+        assert!(sel.contains(2, 3)); // top-left corner
+        assert!(sel.contains(8, 7)); // bottom-right corner
+        assert!(sel.contains(2, 7)); // bottom-left corner
+        assert!(sel.contains(8, 3)); // top-right corner
     }
 
     #[test]
     fn contains_outside() {
         let sel = Selection::new(2, 3, 8, 7);
-        assert!(!sel.contains(1, 5));  // left of selection
-        assert!(!sel.contains(9, 5));  // right of selection
-        assert!(!sel.contains(5, 2));  // above selection
-        assert!(!sel.contains(5, 8));  // below selection
+        assert!(!sel.contains(1, 5)); // left of selection
+        assert!(!sel.contains(9, 5)); // right of selection
+        assert!(!sel.contains(5, 2)); // above selection
+        assert!(!sel.contains(5, 8)); // below selection
     }
 
     #[test]

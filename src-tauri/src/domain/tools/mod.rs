@@ -54,12 +54,8 @@ pub trait Tool {
         x: u32,
         y: u32,
     ) -> Result<ToolResult, DomainError>;
-    fn on_drag(
-        &mut self,
-        ctx: &mut ToolContext,
-        x: u32,
-        y: u32,
-    ) -> Result<ToolResult, DomainError>;
+    fn on_drag(&mut self, ctx: &mut ToolContext, x: u32, y: u32)
+        -> Result<ToolResult, DomainError>;
     fn on_release(
         &mut self,
         ctx: &mut ToolContext,

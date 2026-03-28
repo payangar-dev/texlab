@@ -1,4 +1,4 @@
-﻿use std::collections::VecDeque;
+use std::collections::VecDeque;
 
 use super::{DomainError, Tool, ToolContext, ToolResult};
 
@@ -255,12 +255,28 @@ mod tests {
 
         // The red() ring must be untouched
         for x in 0..6u32 {
-            assert_eq!(buf.get_pixel(x, 0).unwrap(), red(), "top row ({x},0) should stay red()");
-            assert_eq!(buf.get_pixel(x, 5).unwrap(), red(), "bottom row ({x},5) should stay red()");
+            assert_eq!(
+                buf.get_pixel(x, 0).unwrap(),
+                red(),
+                "top row ({x},0) should stay red()"
+            );
+            assert_eq!(
+                buf.get_pixel(x, 5).unwrap(),
+                red(),
+                "bottom row ({x},5) should stay red()"
+            );
         }
         for y in 1..5u32 {
-            assert_eq!(buf.get_pixel(0, y).unwrap(), red(), "left col (0,{y}) should stay red()");
-            assert_eq!(buf.get_pixel(5, y).unwrap(), red(), "right col (5,{y}) should stay red()");
+            assert_eq!(
+                buf.get_pixel(0, y).unwrap(),
+                red(),
+                "left col (0,{y}) should stay red()"
+            );
+            assert_eq!(
+                buf.get_pixel(5, y).unwrap(),
+                red(),
+                "right col (5,{y}) should stay red()"
+            );
         }
     }
 
