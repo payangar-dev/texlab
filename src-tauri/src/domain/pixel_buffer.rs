@@ -27,6 +27,25 @@ impl PixelBuffer {
         })
     }
 
+    /// Creates a buffer from pre-existing RGBA pixel data.
+    pub fn from_raw_parts(width: u32, height: u32, data: Vec<u8>) -> Result<Self, DomainError> {
+        if width == 0 || height == 0 {
+            return Err(DomainError::InvalidDimensions { width, height });
+        }
+        let expected = (width as usize) * (height as usize) * 4;
+        if data.len() != expected {
+            return Err(DomainError::BufferSizeMismatch {
+                expected,
+                actual: data.len(),
+            });
+        }
+        Ok(Self {
+            width,
+            height,
+            data,
+        })
+    }
+
     pub fn width(&self) -> u32 {
         self.width
     }

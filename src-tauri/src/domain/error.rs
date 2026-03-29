@@ -32,6 +32,11 @@ pub enum DomainError {
     InvalidBrushSize {
         size: u8,
     },
+    EmptyHistory,
+    BufferSizeMismatch {
+        expected: usize,
+        actual: usize,
+    },
 }
 
 impl fmt::Display for DomainError {
@@ -66,6 +71,13 @@ impl fmt::Display for DomainError {
             Self::IoError { reason } => write!(f, "I/O error: {reason}"),
             Self::InvalidBrushSize { size } => {
                 write!(f, "invalid brush size: {size}, must be 1..=16")
+            }
+            Self::EmptyHistory => write!(f, "no history entries available"),
+            Self::BufferSizeMismatch { expected, actual } => {
+                write!(
+                    f,
+                    "buffer data length {actual} does not match expected {expected}"
+                )
             }
         }
     }
@@ -151,6 +163,24 @@ mod tests {
     fn display_invalid_brush_size() {
         let err = DomainError::InvalidBrushSize { size: 0 };
         assert_eq!(err.to_string(), "invalid brush size: 0, must be 1..=16");
+    }
+
+    #[test]
+    fn display_empty_history() {
+        let err = DomainError::EmptyHistory;
+        assert_eq!(err.to_string(), "no history entries available");
+    }
+
+    #[test]
+    fn display_buffer_size_mismatch() {
+        let err = DomainError::BufferSizeMismatch {
+            expected: 64,
+            actual: 32,
+        };
+        assert_eq!(
+            err.to_string(),
+            "buffer data length 32 does not match expected 64"
+        );
     }
 
     #[test]

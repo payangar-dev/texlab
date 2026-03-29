@@ -2,6 +2,7 @@ use super::blend;
 use super::error::DomainError;
 use super::layer::{Layer, LayerId};
 use super::pixel_buffer::PixelBuffer;
+use super::undo::TextureSnapshot;
 
 /// Ordered collection of layers (bottom to top).
 /// Manages layer lifecycle and compositing.
@@ -61,6 +62,16 @@ impl LayerStack {
 
     pub fn layers(&self) -> &[Layer] {
         &self.layers
+    }
+
+    /// Replaces all layers from the given texture snapshot.
+    pub fn restore_from_snapshots(&mut self, snapshot: TextureSnapshot) -> Result<(), DomainError> {
+        let mut new_layers = Vec::with_capacity(snapshot.layers.len());
+        for snap in snapshot.layers {
+            new_layers.push(Layer::from_snapshot(snap)?);
+        }
+        self.layers = new_layers;
+        Ok(())
     }
 
     /// Composites all visible layers bottom-to-top into a flattened buffer.
