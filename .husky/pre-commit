@@ -1,1 +1,3 @@
 cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+npx tsc --noEmit
+npx lint-staged

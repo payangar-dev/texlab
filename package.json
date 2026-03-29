@@ -10,8 +10,16 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "vitest run",
+    "check": "biome check src/",
+    "check:fix": "biome check --write src/",
+    "typecheck": "tsc --noEmit",
     "tauri": "tauri",
     "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,css}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",
@@ -21,6 +29,7 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.9",
     "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -29,6 +38,7 @@
     "@vitejs/plugin-react": "^4.5.2",
     "husky": "^9.1.7",
     "jsdom": "^29.0.1",
+    "lint-staged": "^16.4.0",
     "typescript": "~5.7.3",
     "vite": "^6.3.5",
     "vitest": "^4.1.2"
