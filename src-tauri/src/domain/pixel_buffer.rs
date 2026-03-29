@@ -39,7 +39,11 @@ impl PixelBuffer {
                 actual: data.len(),
             });
         }
-        Ok(Self { width, height, data })
+        Ok(Self {
+            width,
+            height,
+            data,
+        })
     }
 
     pub fn width(&self) -> u32 {

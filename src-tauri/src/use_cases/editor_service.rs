@@ -125,8 +125,7 @@ impl EditorService {
         color: Color,
         brush_size: BrushSize,
     ) -> Result<ToolResult, DomainError> {
-        let result =
-            self.run_tool(tool, ToolPhase::Release, layer_id, x, y, color, brush_size)?;
+        let result = self.run_tool(tool, ToolPhase::Release, layer_id, x, y, color, brush_size)?;
         if self.pixels_modified_in_cycle {
             if let Some(snapshot) = self.pending_snapshot.take() {
                 self.undo_manager
@@ -201,13 +200,13 @@ impl EditorService {
         f: impl FnOnce(&mut Layer) -> Result<(), DomainError>,
     ) -> Result<(), DomainError> {
         let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
-        let layer = self
-            .texture
-            .layer_stack_mut()
-            .get_layer_mut(id)
-            .ok_or(DomainError::LayerNotFound {
-                layer_id: id.value(),
-            })?;
+        let layer =
+            self.texture
+                .layer_stack_mut()
+                .get_layer_mut(id)
+                .ok_or(DomainError::LayerNotFound {
+                    layer_id: id.value(),
+                })?;
         f(layer)?;
         self.texture.mark_dirty();
         self.undo_manager.push(UndoEntry::new(op, snapshot));
@@ -232,11 +231,7 @@ impl EditorService {
         })
     }
 
-    pub fn set_layer_visibility(
-        &mut self,
-        id: LayerId,
-        visible: bool,
-    ) -> Result<(), DomainError> {
+    pub fn set_layer_visibility(&mut self, id: LayerId, visible: bool) -> Result<(), DomainError> {
         self.with_layer_undo(id, OperationType::LayerPropertyChange, |layer| {
             layer.set_visible(visible);
             Ok(())
@@ -271,8 +266,7 @@ mod tests {
 
     fn test_service() -> EditorService {
         let mut tex = test_texture();
-        tex.add_layer(LayerId::new(1), "base".to_string())
-            .unwrap();
+        tex.add_layer(LayerId::new(1), "base".to_string()).unwrap();
         EditorService::new(tex)
     }
 
@@ -423,10 +417,24 @@ mod tests {
 
         brush_stroke(&mut svc, &mut brush, id, 0, 0, Color::WHITE);
 
-        svc.apply_tool_press(&mut eraser, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
-            .unwrap();
-        svc.apply_tool_release(&mut eraser, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
-            .unwrap();
+        svc.apply_tool_press(
+            &mut eraser,
+            id,
+            0,
+            0,
+            Color::TRANSPARENT,
+            BrushSize::DEFAULT,
+        )
+        .unwrap();
+        svc.apply_tool_release(
+            &mut eraser,
+            id,
+            0,
+            0,
+            Color::TRANSPARENT,
+            BrushSize::DEFAULT,
+        )
+        .unwrap();
 
         assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
         svc.undo().unwrap();
@@ -659,21 +667,13 @@ mod tests {
 
         svc.set_layer_opacity(id, 0.3).unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             0.3
         );
 
         svc.undo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             1.0
         );
     }
@@ -724,21 +724,13 @@ mod tests {
 
         svc.set_layer_name(id, "renamed").unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .name(),
+            svc.texture().layer_stack().get_layer(id).unwrap().name(),
             "renamed"
         );
 
         svc.undo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .name(),
+            svc.texture().layer_stack().get_layer(id).unwrap().name(),
             "base"
         );
     }
@@ -776,31 +768,19 @@ mod tests {
 
         svc.undo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             0.5
         );
 
         svc.undo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             0.8
         );
 
         svc.undo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             1.0
         );
     }
@@ -831,11 +811,7 @@ mod tests {
 
         svc.undo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             1.0
         );
 
@@ -889,21 +865,13 @@ mod tests {
         svc.set_layer_opacity(id, 0.5).unwrap();
         svc.undo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             1.0
         );
 
         svc.redo().unwrap();
         assert_eq!(
-            svc.texture()
-                .layer_stack()
-                .get_layer(id)
-                .unwrap()
-                .opacity(),
+            svc.texture().layer_stack().get_layer(id).unwrap().opacity(),
             0.5
         );
     }
@@ -913,8 +881,7 @@ mod tests {
     #[test]
     fn history_limit_enforced_at_101_operations() {
         let mut tex = test_texture();
-        tex.add_layer(LayerId::new(1), "base".to_string())
-            .unwrap();
+        tex.add_layer(LayerId::new(1), "base".to_string()).unwrap();
         let mut svc = EditorService::with_max_history(tex, 100);
         let id = LayerId::new(1);
         let mut tool = BrushTool::default();
@@ -941,8 +908,7 @@ mod tests {
     #[test]
     fn oldest_operation_is_unreachable() {
         let mut tex = test_texture();
-        tex.add_layer(LayerId::new(1), "base".to_string())
-            .unwrap();
+        tex.add_layer(LayerId::new(1), "base".to_string()).unwrap();
         let mut svc = EditorService::with_max_history(tex, 3);
         let id = LayerId::new(1);
         let mut tool = BrushTool::default();
@@ -965,8 +931,7 @@ mod tests {
     #[test]
     fn memory_stays_bounded_at_capacity() {
         let mut tex = test_texture();
-        tex.add_layer(LayerId::new(1), "base".to_string())
-            .unwrap();
+        tex.add_layer(LayerId::new(1), "base".to_string()).unwrap();
         let mut svc = EditorService::with_max_history(tex, 5);
         let id = LayerId::new(1);
         let mut tool = BrushTool::default();

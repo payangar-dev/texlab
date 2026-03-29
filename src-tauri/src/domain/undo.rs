@@ -71,7 +71,10 @@ pub struct UndoEntry {
 
 impl UndoEntry {
     pub fn new(operation: OperationType, snapshot: TextureSnapshot) -> Self {
-        Self { operation, snapshot }
+        Self {
+            operation,
+            snapshot,
+        }
     }
 
     pub fn operation(&self) -> &OperationType {
@@ -233,9 +236,7 @@ mod tests {
         let mut layer1 = Layer::new(LayerId::new(1), "bottom".to_string(), 4, 4).unwrap();
         layer1.set_pixel(0, 0, Color::WHITE).unwrap();
         let mut layer2 = Layer::new(LayerId::new(2), "top".to_string(), 4, 4).unwrap();
-        layer2
-            .set_pixel(1, 1, Color::new(255, 0, 0, 255))
-            .unwrap();
+        layer2.set_pixel(1, 1, Color::new(255, 0, 0, 255)).unwrap();
         layer2.set_opacity(0.5);
         stack.add_layer(layer1);
         stack.add_layer(layer2);

@@ -126,8 +126,7 @@ impl Layer {
 
     /// Creates a layer from a snapshot.
     pub(crate) fn from_snapshot(snapshot: LayerSnapshot) -> Result<Self, DomainError> {
-        let buffer =
-            PixelBuffer::from_raw_parts(snapshot.width, snapshot.height, snapshot.data)?;
+        let buffer = PixelBuffer::from_raw_parts(snapshot.width, snapshot.height, snapshot.data)?;
         Ok(Self {
             id: snapshot.id,
             name: snapshot.name,

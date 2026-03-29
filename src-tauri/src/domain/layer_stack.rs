@@ -65,10 +65,7 @@ impl LayerStack {
     }
 
     /// Replaces all layers from the given texture snapshot.
-    pub fn restore_from_snapshots(
-        &mut self,
-        snapshot: TextureSnapshot,
-    ) -> Result<(), DomainError> {
+    pub fn restore_from_snapshots(&mut self, snapshot: TextureSnapshot) -> Result<(), DomainError> {
         let mut new_layers = Vec::with_capacity(snapshot.layers.len());
         for snap in snapshot.layers {
             new_layers.push(Layer::from_snapshot(snap)?);
