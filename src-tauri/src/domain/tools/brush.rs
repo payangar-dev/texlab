@@ -66,6 +66,7 @@ impl Tool for BrushTool {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::super::{BrushSize, ToolContext, ToolResult};
     use crate::domain::color::Color;

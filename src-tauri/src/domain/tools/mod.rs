@@ -104,6 +104,7 @@ pub use line::LineTool;
 pub use selection_tool::SelectionTool;
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

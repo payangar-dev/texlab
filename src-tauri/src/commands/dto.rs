@@ -233,6 +233,7 @@ pub fn parse_layer_id(hex: &str) -> Result<LayerId, crate::error::AppError> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

@@ -86,6 +86,7 @@ impl fmt::Display for DomainError {
 impl std::error::Error for DomainError {}
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

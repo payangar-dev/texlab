@@ -26,8 +26,7 @@ impl Tool for FillTool {
             return Ok(ToolResult::NoOp);
         }
 
-        // Bounds already checked above; unwrap is safe.
-        let target = ctx.buffer.get_pixel(x, y).unwrap();
+        let target = ctx.buffer.get_pixel(x, y)?;
 
         // FR-012: filling with the same color is a no-op
         if target == ctx.color {
@@ -43,8 +42,7 @@ impl Tool for FillTool {
         queue.push_back((x, y));
 
         while let Some((cx, cy)) = queue.pop_front() {
-            // set_pixel cannot fail: cx/cy are always within bounds by construction.
-            ctx.buffer.set_pixel(cx, cy, ctx.color).unwrap();
+            ctx.buffer.set_pixel(cx, cy, ctx.color)?;
 
             // 4-connected neighbors: up, down, left, right
             let neighbors: [(i64, i64); 4] = [
@@ -63,8 +61,7 @@ impl Tool for FillTool {
                 if visited[idx] {
                     continue;
                 }
-                // get_pixel cannot fail: bounds already checked above.
-                if ctx.buffer.get_pixel(nx, ny).unwrap() != target {
+                if ctx.buffer.get_pixel(nx, ny)? != target {
                     continue;
                 }
                 visited[idx] = true;
@@ -95,6 +92,7 @@ impl Tool for FillTool {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::super::{BrushSize, ToolContext, ToolResult};
     use super::FillTool;
