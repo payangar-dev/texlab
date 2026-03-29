@@ -1,6 +1,7 @@
+use crate::domain::DomainError;
+
 /// Unified error type for all Tauri IPC commands.
 /// Serialized as a plain string for frontend consumption.
-#[allow(dead_code)]
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
     #[error("{0}")]
@@ -13,5 +14,17 @@ impl serde::Serialize for AppError {
         S: serde::Serializer,
     {
         serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl From<DomainError> for AppError {
+    fn from(err: DomainError) -> Self {
+        AppError::Internal(err.to_string())
+    }
+}
+
+impl From<image::ImageError> for AppError {
+    fn from(err: image::ImageError) -> Self {
+        AppError::Internal(err.to_string())
     }
 }

@@ -19,9 +19,9 @@
 
 **Purpose**: Add new dependencies and prepare test infrastructure
 
-- [ ] T001 Add `image = { version = "0.25", default-features = false, features = ["png"] }` and `tauri-plugin-dialog = "2"` to src-tauri/Cargo.toml
-- [ ] T002 [P] Install `@tauri-apps/plugin-dialog` npm package and add `"dialog:default"` permission to src-tauri/capabilities/default.json
-- [ ] T003 [P] Create PNG test fixture files (16x16 RGBA with alpha, 16x16 RGB without alpha, 32x32 fully transparent) in src-tauri/tests/fixtures/
+- [x] T001 Add `image = { version = "0.25", default-features = false, features = ["png"] }` and `tauri-plugin-dialog = "2"` to src-tauri/Cargo.toml
+- [x] T002 [P] Install `@tauri-apps/plugin-dialog` npm package and add `"dialog:default"` permission to src-tauri/capabilities/default.json
+- [x] T003 [P] Create PNG test fixture files (16x16 RGBA with alpha, 16x16 RGB without alpha, 32x32 fully transparent) in src-tauri/tests/fixtures/
 
 ---
 
@@ -31,14 +31,14 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Expand `AppState` with `editor: Option<EditorService>`, `active_tool: Option<Box<dyn Tool>>`, and `active_layer_id: Option<LayerId>` fields in src-tauri/src/state.rs
-- [ ] T005 [P] Add `From<DomainError>` impl to `AppError` in src-tauri/src/error.rs
-- [ ] T006 [P] Implement `PngReader` struct implementing `domain::ports::ImageReader` (read PNG → PixelBuffer via `image::open().to_rgba8()`) in src-tauri/src/infrastructure/png_reader.rs
-- [ ] T007 [P] Implement `PngWriter` struct implementing `domain::ports::ImageWriter` (write PixelBuffer → PNG via `ImageBuffer::from_raw().save()`) in src-tauri/src/infrastructure/png_writer.rs
-- [ ] T008 Declare `png_reader` and `png_writer` modules in src-tauri/src/infrastructure/mod.rs
-- [ ] T009 Implement all DTO structs (`EditorStateDto`, `TextureMetadataDto`, `LayerInfoDto`, `CompositeDto`, `ToolResultDto`, `ColorDto`, `SelectionDto`) with `serde::Serialize` derives and `From` conversion impls from domain types in src-tauri/src/commands/dto.rs
-- [ ] T010 [P] Create commands module structure: mod.rs with sub-module declarations (dto, texture_commands, tool_commands, layer_commands, history_commands, state_commands) and re-exports of all command functions in src-tauri/src/commands/mod.rs
-- [ ] T011 Write PNG round-trip integration tests for `PngReader` and `PngWriter` using test fixtures (read RGBA, read RGB→RGBA conversion, write then re-read, error on missing file) in src-tauri/src/infrastructure/png_reader.rs and src-tauri/src/infrastructure/png_writer.rs
+- [x] T004 Expand `AppState` with `editor: Option<EditorService>`, `active_tool: Option<Box<dyn Tool>>`, and `active_layer_id: Option<LayerId>` fields in src-tauri/src/state.rs
+- [x] T005 [P] Add `From<DomainError>` impl to `AppError` in src-tauri/src/error.rs
+- [x] T006 [P] Implement `PngReader` struct implementing `domain::ports::ImageReader` (read PNG → PixelBuffer via `image::open().to_rgba8()`) in src-tauri/src/infrastructure/png_reader.rs
+- [x] T007 [P] Implement `PngWriter` struct implementing `domain::ports::ImageWriter` (write PixelBuffer → PNG via `ImageBuffer::from_raw().save()`) in src-tauri/src/infrastructure/png_writer.rs
+- [x] T008 Declare `png_reader` and `png_writer` modules in src-tauri/src/infrastructure/mod.rs
+- [x] T009 Implement all DTO structs (`EditorStateDto`, `TextureMetadataDto`, `LayerInfoDto`, `CompositeDto`, `ToolResultDto`, `ColorDto`, `SelectionDto`) with `serde::Serialize` derives and `From` conversion impls from domain types in src-tauri/src/commands/dto.rs
+- [x] T010 [P] Create commands module structure: mod.rs with sub-module declarations (dto, texture_commands, tool_commands, layer_commands, history_commands, state_commands) and re-exports of all command functions in src-tauri/src/commands/mod.rs
+- [x] T011 Write PNG round-trip integration tests for `PngReader` and `PngWriter` using test fixtures (read RGBA, read RGB→RGBA conversion, write then re-read, error on missing file) in src-tauri/src/infrastructure/png_reader.rs and src-tauri/src/infrastructure/png_writer.rs
 
 **Checkpoint**: Infrastructure compiles, PNG round-trip tests pass, DTOs and module structure ready
 
@@ -52,9 +52,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement `open_texture` command: accept `filePath`, `namespace`, `texturePath` params, read PNG via `PngReader`, check unsaved changes guard, create `Texture` + `EditorService`, set `active_layer_id` to first layer, clear `active_tool`, store in `AppState`, emit `state-changed` event, return `EditorStateDto` in src-tauri/src/commands/texture_commands.rs
-- [ ] T013 [P] [US1] Implement `get_editor_state` (return `EditorStateDto` or empty state if no texture) and `get_composite` (return `CompositeDto`) commands in src-tauri/src/commands/state_commands.rs
-- [ ] T014 [US1] Register `open_texture`, `get_editor_state`, `get_composite` in `generate_handler![]` and add `.plugin(tauri_plugin_dialog::init())` in src-tauri/src/lib.rs
+- [x] T012 [US1] Implement `open_texture` command: accept `filePath`, `namespace`, `texturePath` params, read PNG via `PngReader`, check unsaved changes guard, create `Texture` + `EditorService`, set `active_layer_id` to first layer, clear `active_tool`, store in `AppState`, emit `state-changed` event, return `EditorStateDto` in src-tauri/src/commands/texture_commands.rs
+- [x] T013 [P] [US1] Implement `get_editor_state` (return `EditorStateDto` or empty state if no texture) and `get_composite` (return `CompositeDto`) commands in src-tauri/src/commands/state_commands.rs
+- [x] T014 [US1] Register `open_texture`, `get_editor_state`, `get_composite` in `generate_handler![]` and add `.plugin(tauri_plugin_dialog::init())` in src-tauri/src/lib.rs
 
 **Checkpoint**: `open_texture` loads a PNG, `get_editor_state` returns metadata and layers, `get_composite` returns RGBA bytes. `cargo check` passes.
 
@@ -68,8 +68,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Implement `tool_press`, `tool_drag`, `tool_release` commands in src-tauri/src/commands/tool_commands.rs. `tool_press`: create tool instance from `tool` string (`"brush"` → `BrushTool`, etc.), store in `AppState.active_tool`, update `active_layer_id`, call `apply_tool_press`. `tool_drag`/`tool_release`: reuse tool from `AppState.active_tool` (error if None), call `apply_tool_drag`/`apply_tool_release`. `tool_release` clears `active_tool` after call. All: layer lookup by hex ID, `ToolContext` construction, composite in `ToolResultDto` when pixels modified.
-- [ ] T016 [US2] Register `tool_press`, `tool_drag`, `tool_release` in `generate_handler![]` in src-tauri/src/lib.rs
+- [x] T015 [US2] Implement `tool_press`, `tool_drag`, `tool_release` commands in src-tauri/src/commands/tool_commands.rs. `tool_press`: create tool instance from `tool` string (`"brush"` → `BrushTool`, etc.), store in `AppState.active_tool`, update `active_layer_id`, call `apply_tool_press`. `tool_drag`/`tool_release`: reuse tool from `AppState.active_tool` (error if None), call `apply_tool_drag`/`apply_tool_release`. `tool_release` clears `active_tool` after call. All: layer lookup by hex ID, `ToolContext` construction, composite in `ToolResultDto` when pixels modified.
+- [x] T016 [US2] Register `tool_press`, `tool_drag`, `tool_release` in `generate_handler![]` in src-tauri/src/lib.rs
 
 **Checkpoint**: All 6 tools (brush, eraser, fill, color_picker, line, selection) produce correct results via IPC commands. `cargo check` passes.
 
@@ -83,8 +83,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Implement `save_texture` command: composite all layers via `PngWriter`, write to path, mark texture clean, emit `state-changed` event in src-tauri/src/commands/texture_commands.rs
-- [ ] T018 [US3] Register `save_texture` in `generate_handler![]` in src-tauri/src/lib.rs
+- [x] T017 [US3] Implement `save_texture` command: composite all layers via `PngWriter`, write to path, mark texture clean, emit `state-changed` event in src-tauri/src/commands/texture_commands.rs
+- [x] T018 [US3] Register `save_texture` in `generate_handler![]` in src-tauri/src/lib.rs
 
 **Checkpoint**: Open → edit → save → reopen cycle produces correct PNG output. `cargo check` passes.
 
@@ -98,8 +98,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T019 [US4] Implement `create_texture` command: validate params, check unsaved changes guard, create blank `Texture` with one transparent layer, set `active_layer_id` to first layer, clear `active_tool`, store in `AppState`, emit `state-changed` event, return `EditorStateDto` in src-tauri/src/commands/texture_commands.rs
-- [ ] T020 [US4] Register `create_texture` in `generate_handler![]` in src-tauri/src/lib.rs
+- [x] T019 [US4] Implement `create_texture` command: validate params, check unsaved changes guard, create blank `Texture` with one transparent layer, set `active_layer_id` to first layer, clear `active_tool`, store in `AppState`, emit `state-changed` event, return `EditorStateDto` in src-tauri/src/commands/texture_commands.rs
+- [x] T020 [US4] Register `create_texture` in `generate_handler![]` in src-tauri/src/lib.rs
 
 **Checkpoint**: `create_texture` produces a blank texture with correct dimensions. `cargo check` passes.
 
@@ -113,9 +113,9 @@
 
 ### Implementation for User Story 5
 
-- [ ] T021 [US5] Implement `add_layer`, `remove_layer`, `move_layer` commands delegating to `EditorService` layer methods, emit `state-changed`, return `EditorStateDto` in src-tauri/src/commands/layer_commands.rs
-- [ ] T022 [US5] Implement `set_layer_opacity`, `set_layer_visibility`, `set_layer_blend_mode`, `set_layer_name`, `set_layer_locked` commands in src-tauri/src/commands/layer_commands.rs
-- [ ] T023 [US5] Register all 8 layer commands in `generate_handler![]` in src-tauri/src/lib.rs
+- [x] T021 [US5] Implement `add_layer`, `remove_layer`, `move_layer` commands delegating to `EditorService` layer methods, emit `state-changed`, return `EditorStateDto` in src-tauri/src/commands/layer_commands.rs
+- [x] T022 [US5] Implement `set_layer_opacity`, `set_layer_visibility`, `set_layer_blend_mode`, `set_layer_name`, `set_layer_locked` commands in src-tauri/src/commands/layer_commands.rs
+- [x] T023 [US5] Register all 8 layer commands in `generate_handler![]` in src-tauri/src/lib.rs
 
 **Checkpoint**: All layer CRUD and property operations work via IPC. Composite output reflects changes. `cargo check` passes.
 
@@ -129,8 +129,8 @@
 
 ### Implementation for User Story 6
 
-- [ ] T024 [US6] Implement `undo` and `redo` commands delegating to `EditorService.undo()`/`.redo()`, emit `state-changed`, return `EditorStateDto` in src-tauri/src/commands/history_commands.rs
-- [ ] T025 [US6] Register `undo` and `redo` in `generate_handler![]` in src-tauri/src/lib.rs
+- [x] T024 [US6] Implement `undo` and `redo` commands delegating to `EditorService.undo()`/`.redo()`, emit `state-changed`, return `EditorStateDto` in src-tauri/src/commands/history_commands.rs
+- [x] T025 [US6] Register `undo` and `redo` in `generate_handler![]` in src-tauri/src/lib.rs
 
 **Checkpoint**: Undo reverts last operation, redo reapplies it, `can_undo`/`can_redo` flags are accurate. `cargo check` passes.
 
@@ -144,7 +144,7 @@
 
 ### Implementation for User Story 7
 
-- [ ] T026 [US7] Verify and refine `EditorStateDto` construction to ensure all fields are populated correctly after every operation type (open, create, draw, layer ops, undo/redo) — adjust `From` conversion in src-tauri/src/commands/dto.rs if needed
+- [x] T026 [US7] Verify and refine `EditorStateDto` construction to ensure all fields are populated correctly after every operation type (open, create, draw, layer ops, undo/redo) — adjust `From` conversion in src-tauri/src/commands/dto.rs if needed
 
 **Checkpoint**: `get_editor_state` accurately reflects the full editor state at any point in the workflow. `cargo check` and `cargo test` pass.
 
@@ -154,9 +154,9 @@
 
 **Purpose**: Frontend wiring and final verification
 
-- [ ] T027 [P] Define TypeScript DTO interfaces and typed `invoke()` wrapper functions for all 18 commands in src/api/commands.ts
-- [ ] T028 [P] Implement Zustand `editorStore` with `state-changed` event listener that auto-refreshes state from Rust in src/store/editorStore.ts
-- [ ] T029 Run `cargo test` and `cargo check` to verify all existing + new tests pass with no warnings
+- [x] T027 [P] Define TypeScript DTO interfaces and typed `invoke()` wrapper functions for all 18 commands in src/api/commands.ts
+- [x] T028 [P] Implement Zustand `editorStore` with `state-changed` event listener that auto-refreshes state from Rust in src/store/editorStore.ts
+- [x] T029 Run `cargo test` and `cargo check` to verify all existing + new tests pass with no warnings
 
 ---
 
