@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, act, cleanup } from "@testing-library/react";
-import StatusBar from "./StatusBar";
-import { useViewportStore } from "../../store/viewportStore";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useEditorStore } from "../../store/editorStore";
+import { useViewportStore } from "../../store/viewportStore";
+import StatusBar from "./StatusBar";
 
-let capturedCursorCallback: ((pixel: { x: number; y: number } | null) => void) | null = null;
+let capturedCursorCallback: ((pixel: { x: number; y: number } | null) => void) | null =
+  null;
 
 vi.mock("../canvas/CanvasViewport", () => ({
   subscribeToCursor: (cb: (pixel: { x: number; y: number } | null) => void) => {

@@ -1,18 +1,10 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useViewportStore } from "../../store/viewportStore";
-import {
-  CHECKERBOARD_COLOR_A,
-  CHECKERBOARD_COLOR_B,
-  GRID_THRESHOLD,
-} from "./constants";
+import { CHECKERBOARD_COLOR_A, CHECKERBOARD_COLOR_B, GRID_THRESHOLD } from "./constants";
 import { gridOpacity } from "./math";
 
 export interface CanvasRendererApi {
-  updateComposite: (
-    data: Uint8ClampedArray,
-    width: number,
-    height: number,
-  ) => void;
+  updateComposite: (data: Uint8ClampedArray, width: number, height: number) => void;
   requestRedraw: () => void;
   /** Ref to current cursor pixel for overlay drawing. Set by useViewportControls. */
   cursorPixelRef: React.RefObject<{ x: number; y: number } | null>;
@@ -39,7 +31,8 @@ export function useCanvasRenderer(
       const patternCanvas = document.createElement("canvas");
       patternCanvas.width = 2;
       patternCanvas.height = 2;
-      const pCtx = patternCanvas.getContext("2d")!;
+      const pCtx = patternCanvas.getContext("2d");
+      if (!pCtx) return null;
       pCtx.fillStyle = CHECKERBOARD_COLOR_A;
       pCtx.fillRect(0, 0, 2, 2);
       pCtx.fillStyle = CHECKERBOARD_COLOR_B;
@@ -117,14 +110,7 @@ export function useCanvasRenderer(
       if (!offscreen || texW === 0 || texH === 0) return;
 
       // Set transform: zoom + pan, scaled by DPR
-      ctx.setTransform(
-        zoom * dpr,
-        0,
-        0,
-        zoom * dpr,
-        panX * dpr,
-        panY * dpr,
-      );
+      ctx.setTransform(zoom * dpr, 0, 0, zoom * dpr, panX * dpr, panY * dpr);
 
       // Draw checkerboard in texture space
       const pattern = getCheckerboardPattern(ctx);

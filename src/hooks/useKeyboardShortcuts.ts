@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useViewportStore } from "../store/viewportStore";
 import { useEditorStore } from "../store/editorStore";
+import { useViewportStore } from "../store/viewportStore";
 
 export function useKeyboardShortcuts(
   spaceHeldRef: React.RefObject<boolean>,

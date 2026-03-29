@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { useViewportStore } from "./viewportStore";
+import { beforeEach, describe, expect, it } from "vitest";
 import { ZOOM_LEVELS } from "../components/canvas/constants";
+import { useViewportStore } from "./viewportStore";
 
 function resetStore() {
   useViewportStore.setState({
@@ -107,8 +107,7 @@ describe("viewportStore", () => {
   describe("setContainerSize", () => {
     it("updates container dimensions", () => {
       useViewportStore.getState().setContainerSize(1024, 768);
-      const { containerWidth, containerHeight } =
-        useViewportStore.getState();
+      const { containerWidth, containerHeight } = useViewportStore.getState();
       expect(containerWidth).toBe(1024);
       expect(containerHeight).toBe(768);
     });

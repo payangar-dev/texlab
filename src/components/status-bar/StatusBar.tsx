@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useViewportStore } from "../../store/viewportStore";
+import { useEffect, useState } from "react";
 import { useEditorStore } from "../../store/editorStore";
+import { useViewportStore } from "../../store/viewportStore";
 import { subscribeToCursor } from "../canvas/CanvasViewport";
 
 const monoStyle: React.CSSProperties = {
@@ -37,9 +37,7 @@ export default function StatusBar() {
       <span style={monoStyle}>
         {texture ? `${texture.width} \u00D7 ${texture.height}` : "\u00A0"}
       </span>
-      <span style={monoStyle}>
-        {`${Math.round(zoom * 100)}%`}
-      </span>
+      <span style={monoStyle}>{`${Math.round(zoom * 100)}%`}</span>
       <span style={{ flex: 1 }} />
     </div>
   );

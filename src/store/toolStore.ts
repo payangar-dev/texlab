@@ -1,13 +1,7 @@
 import { create } from "zustand";
 import type { ColorDto } from "../api/commands";
 
-export type ToolType =
-  | "brush"
-  | "eraser"
-  | "fill"
-  | "eyedropper"
-  | "line"
-  | "rectangle";
+export type ToolType = "brush" | "eraser" | "fill" | "eyedropper" | "line" | "rectangle";
 
 interface ToolState {
   activeToolType: ToolType;

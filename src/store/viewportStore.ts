@@ -1,10 +1,6 @@
 import { create } from "zustand";
 import { ZOOM_LEVELS } from "../components/canvas/constants";
-import {
-  fitToViewportZoom,
-  zoomToCursorPan,
-  clampPan,
-} from "../components/canvas/math";
+import { clampPan, fitToViewportZoom, zoomToCursorPan } from "../components/canvas/math";
 
 interface ViewportState {
   zoom: number;
@@ -16,12 +12,7 @@ interface ViewportState {
 
 interface ViewportActions {
   setZoom: (zoom: number, cursorX?: number, cursorY?: number) => void;
-  setPan: (
-    panX: number,
-    panY: number,
-    textureW?: number,
-    textureH?: number,
-  ) => void;
+  setPan: (panX: number, panY: number, textureW?: number, textureH?: number) => void;
   zoomIn: (cursorX?: number, cursorY?: number) => void;
   zoomOut: (cursorX?: number, cursorY?: number) => void;
   fitToViewport: (textureWidth: number, textureHeight: number) => void;

@@ -1,12 +1,12 @@
-import { useRef, useEffect, useCallback, memo } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { memo, useCallback, useEffect, useRef } from "react";
+import { getComposite } from "../../api/commands";
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
+import { useResizeObserver } from "../../hooks/useResizeObserver";
 import { useEditorStore } from "../../store/editorStore";
 import { useViewportStore } from "../../store/viewportStore";
-import { useResizeObserver } from "../../hooks/useResizeObserver";
 import { useCanvasRenderer } from "./useCanvasRenderer";
 import { useViewportControls } from "./useViewportControls";
-import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
-import { getComposite } from "../../api/commands";
-import { listen } from "@tauri-apps/api/event";
 
 /** Callback subscribers for cursor pixel updates (used by StatusBar). */
 export type CursorListener = (pixel: { x: number; y: number } | null) => void;
@@ -18,9 +18,7 @@ export function subscribeToCursor(listener: CursorListener): () => void {
   return () => cursorListeners.delete(listener);
 }
 
-export function notifyCursorListeners(
-  pixel: { x: number; y: number } | null,
-): void {
+export function notifyCursorListeners(pixel: { x: number; y: number } | null): void {
   for (const listener of cursorListeners) {
     listener(pixel);
   }

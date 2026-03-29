@@ -1,7 +1,6 @@
 /** Discrete zoom levels (multipliers). Sub-1x are fractional; >=1x are integers. */
 export const ZOOM_LEVELS: readonly number[] = [
-  0.25, 0.33, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 48, 64, 96,
-  128,
+  0.25, 0.33, 0.5, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 48, 64, 96, 128,
 ];
 
 /** Minimum zoom at which the pixel grid becomes visible. */

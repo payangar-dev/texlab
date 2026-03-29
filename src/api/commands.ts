@@ -148,10 +148,7 @@ export function removeLayer(layerId: string): Promise<EditorStateDto> {
   return invoke("remove_layer", { layerId });
 }
 
-export function moveLayer(
-  fromIndex: number,
-  toIndex: number,
-): Promise<EditorStateDto> {
+export function moveLayer(fromIndex: number, toIndex: number): Promise<EditorStateDto> {
   return invoke("move_layer", { fromIndex, toIndex });
 }
 
@@ -176,10 +173,7 @@ export function setLayerBlendMode(
   return invoke("set_layer_blend_mode", { layerId, blendMode });
 }
 
-export function setLayerName(
-  layerId: string,
-  name: string,
-): Promise<EditorStateDto> {
+export function setLayerName(layerId: string, name: string): Promise<EditorStateDto> {
   return invoke("set_layer_name", { layerId, name });
 }
 

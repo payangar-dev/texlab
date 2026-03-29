@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { useViewportStore } from "../store/viewportStore";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useEditorStore } from "../store/editorStore";
+import { useViewportStore } from "../store/viewportStore";
 
 // We test the keyboard event logic by simulating keydown/keyup on window.
 // The hook registers listeners on window, so we dispatch events directly.
@@ -23,15 +23,11 @@ function resetStores() {
 }
 
 function fireKey(key: string, opts: Partial<KeyboardEventInit> = {}) {
-  window.dispatchEvent(
-    new KeyboardEvent("keydown", { key, bubbles: true, ...opts }),
-  );
+  window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...opts }));
 }
 
 function fireKeyUp(code: string) {
-  window.dispatchEvent(
-    new KeyboardEvent("keyup", { code, bubbles: true }),
-  );
+  window.dispatchEvent(new KeyboardEvent("keyup", { code, bubbles: true }));
 }
 
 describe("useKeyboardShortcuts (via window events)", () => {
@@ -133,9 +129,7 @@ describe("useKeyboardShortcuts (via window events)", () => {
   it("space key sets and clears spaceHeldRef", () => {
     // This is tested indirectly — the space handling is part of the registered listener
     // Verify store is not affected by space key
-    window.dispatchEvent(
-      new KeyboardEvent("keydown", { code: "Space", bubbles: true }),
-    );
+    window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true }));
     expect(useViewportStore.getState().zoom).toBe(4); // unchanged
 
     fireKeyUp("Space");

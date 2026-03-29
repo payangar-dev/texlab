@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  screenToTexture,
-  textureToScreen,
-  pixelAtScreen,
-  isInBounds,
-  zoomToCursorPan,
+  clampPan,
   fitToViewportZoom,
   gridOpacity,
-  clampPan,
+  isInBounds,
+  pixelAtScreen,
+  screenToTexture,
+  textureToScreen,
+  zoomToCursorPan,
 } from "./math";
 
 describe("screenToTexture / textureToScreen round-trip", () => {

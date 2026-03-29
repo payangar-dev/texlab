@@ -1,18 +1,11 @@
 import { useEffect, useRef } from "react";
-import { useViewportStore } from "../../store/viewportStore";
+import { type ToolResultDto, toolDrag, toolPress, toolRelease } from "../../api/commands";
 import { useEditorStore } from "../../store/editorStore";
 import { useToolStore } from "../../store/toolStore";
-import { pixelAtScreen, isInBounds } from "./math";
-import {
-  notifyCursorListeners,
-} from "./CanvasViewport";
+import { useViewportStore } from "../../store/viewportStore";
+import { notifyCursorListeners } from "./CanvasViewport";
+import { isInBounds, pixelAtScreen } from "./math";
 import type { CanvasRendererApi } from "./useCanvasRenderer";
-import {
-  toolPress,
-  toolDrag,
-  toolRelease,
-  type ToolResultDto,
-} from "../../api/commands";
 
 type InteractionMode = "idle" | "tool" | "pan";
 
@@ -64,9 +57,7 @@ export function useViewportControls(
     };
 
     const onPointerDown = (e: PointerEvent) => {
-      const isPanTrigger =
-        e.button === 1 ||
-        (e.button === 0 && spaceHeldRef.current);
+      const isPanTrigger = e.button === 1 || (e.button === 0 && spaceHeldRef.current);
 
       if (isPanTrigger && interactionModeRef.current === "idle") {
         interactionModeRef.current = "pan";
@@ -88,27 +79,16 @@ export function useViewportControls(
         const pixel = pixelAtScreen(e.offsetX, e.offsetY, panX, panY, zoom);
         const { texture, activeLayerId } = useEditorStore.getState();
         if (!texture || !activeLayerId) return;
-        if (!isInBounds(pixel.x, pixel.y, texture.width, texture.height))
-          return;
+        if (!isInBounds(pixel.x, pixel.y, texture.width, texture.height)) return;
 
         // Set mode and capture only after validation passes
         interactionModeRef.current = "tool";
         canvas.setPointerCapture(e.pointerId);
 
-        const { activeToolType, brushSize, activeColor } =
-          useToolStore.getState();
-        toolPress(
-          activeToolType,
-          activeLayerId,
-          pixel.x,
-          pixel.y,
-          activeColor,
-          brushSize,
-        )
+        const { activeToolType, brushSize, activeColor } = useToolStore.getState();
+        toolPress(activeToolType, activeLayerId, pixel.x, pixel.y, activeColor, brushSize)
           .then((result) => handleToolResult(result))
-          .catch((err) =>
-            console.error("[useViewportControls] toolPress failed:", err),
-          );
+          .catch((err) => console.error("[useViewportControls] toolPress failed:", err));
       }
     };
 
@@ -151,15 +131,12 @@ export function useViewportControls(
         const pixel = pixelAtScreen(e.offsetX, e.offsetY, panX, panY, zoom);
         const activeLayerId = useEditorStore.getState().activeLayerId;
         if (!texture || !activeLayerId) return;
-        if (!isInBounds(pixel.x, pixel.y, texture.width, texture.height))
-          return;
+        if (!isInBounds(pixel.x, pixel.y, texture.width, texture.height)) return;
 
         const { brushSize, activeColor } = useToolStore.getState();
         toolDrag(activeLayerId, pixel.x, pixel.y, activeColor, brushSize)
           .then((result) => handleToolResult(result))
-          .catch((err) =>
-            console.error("[useViewportControls] toolDrag failed:", err),
-          );
+          .catch((err) => console.error("[useViewportControls] toolDrag failed:", err));
       }
     };
 
@@ -179,8 +156,7 @@ export function useViewportControls(
         const pixel = pixelAtScreen(e.offsetX, e.offsetY, panX, panY, zoom);
         const { texture, activeLayerId } = useEditorStore.getState();
         if (!texture || !activeLayerId) return;
-        if (!isInBounds(pixel.x, pixel.y, texture.width, texture.height))
-          return;
+        if (!isInBounds(pixel.x, pixel.y, texture.width, texture.height)) return;
 
         const { brushSize, activeColor } = useToolStore.getState();
         toolRelease(activeLayerId, pixel.x, pixel.y, activeColor, brushSize)
@@ -200,11 +176,7 @@ export function useViewportControls(
     const handleToolResult = (result: ToolResultDto) => {
       if (result.resultType === "pixels_modified" && result.composite) {
         const data = new Uint8ClampedArray(result.composite.data);
-        renderer.updateComposite(
-          data,
-          result.composite.width,
-          result.composite.height,
-        );
+        renderer.updateComposite(data, result.composite.width, result.composite.height);
       }
     };
 

@@ -1,9 +1,4 @@
-import {
-  ZOOM_LEVELS,
-  GRID_THRESHOLD,
-  GRID_MAX_OPACITY,
-  FIT_PADDING,
-} from "./constants";
+import { FIT_PADDING, GRID_MAX_OPACITY, GRID_THRESHOLD, ZOOM_LEVELS } from "./constants";
 
 /** Convert screen coordinates to texture-space coordinates. */
 export function screenToTexture(
@@ -118,11 +113,7 @@ export function clampPan(
   const scaledW = textureW * zoom;
   const scaledH = textureH * zoom;
 
-  const clampAxis = (
-    pan: number,
-    scaled: number,
-    container: number,
-  ): number => {
+  const clampAxis = (pan: number, scaled: number, container: number): number => {
     if (scaled <= container) {
       return (container - scaled) / 2;
     }
