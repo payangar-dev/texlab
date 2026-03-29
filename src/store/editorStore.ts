@@ -1,5 +1,5 @@
-import { create } from "zustand";
 import { listen } from "@tauri-apps/api/event";
+import { create } from "zustand";
 import type { EditorStateDto } from "../api/commands";
 import { getEditorState } from "../api/commands";
 
@@ -33,8 +33,11 @@ export function initEditorListener(): void {
   listenerInitialized = true;
 
   listen("state-changed", () => {
-    useEditorStore.getState().refreshState().catch((err) => {
-      console.error("[editorStore] state-changed handler failed:", err);
-    });
+    useEditorStore
+      .getState()
+      .refreshState()
+      .catch((err) => {
+        console.error("[editorStore] state-changed handler failed:", err);
+      });
   });
 }

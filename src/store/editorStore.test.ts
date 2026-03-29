@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -10,8 +10,8 @@ vi.mock("@tauri-apps/api/event", () => ({
 }));
 
 import { invoke } from "@tauri-apps/api/core";
-import { useEditorStore, initEditorListener } from "./editorStore";
 import type { EditorStateDto } from "../api/commands";
+import { initEditorListener, useEditorStore } from "./editorStore";
 
 const mockedInvoke = vi.mocked(invoke);
 
@@ -114,9 +114,6 @@ describe("initEditorListener", () => {
 
     initEditorListener();
 
-    expect(mockListen).toHaveBeenCalledWith(
-      "state-changed",
-      expect.any(Function),
-    );
+    expect(mockListen).toHaveBeenCalledWith("state-changed", expect.any(Function));
   });
 });
