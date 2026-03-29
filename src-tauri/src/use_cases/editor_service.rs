@@ -2,6 +2,8 @@ use crate::domain::blend::BlendMode;
 use crate::domain::color::Color;
 use crate::domain::error::DomainError;
 use crate::domain::layer::{Layer, LayerId};
+use crate::domain::pixel_buffer::PixelBuffer;
+use crate::domain::ports::ImageWriter;
 use crate::domain::texture::Texture;
 use crate::domain::tools::{BrushSize, Tool, ToolContext, ToolResult};
 use crate::domain::undo::{OperationType, TextureSnapshot, UndoEntry, UndoManager};
@@ -51,6 +53,63 @@ impl EditorService {
 
     pub fn can_redo(&self) -> bool {
         self.undo_manager.can_redo()
+    }
+
+    // -- Factory methods --
+
+    /// Creates an editor from an existing pixel buffer (e.g., loaded from a PNG file).
+    /// The texture starts clean (not dirty).
+    pub fn from_pixel_buffer(
+        buffer: &PixelBuffer,
+        namespace: String,
+        path: String,
+        layer_id: LayerId,
+    ) -> Result<Self, DomainError> {
+        let width = buffer.width();
+        let height = buffer.height();
+        let mut texture = Texture::new(namespace, path, width, height)?;
+        texture.add_layer(layer_id, "Background".to_string())?;
+        let layer = texture.layer_stack_mut().get_layer_mut(layer_id).ok_or(
+            DomainError::LayerNotFound {
+                layer_id: layer_id.value(),
+            },
+        )?;
+        for y in 0..height {
+            for x in 0..width {
+                let color = buffer.get_pixel(x, y)?;
+                layer.set_pixel(x, y, color)?;
+            }
+        }
+        texture.mark_saved();
+        Ok(Self::new(texture))
+    }
+
+    /// Creates an editor with a blank texture and one transparent layer.
+    /// The texture starts clean (not dirty).
+    pub fn new_blank(
+        namespace: String,
+        path: String,
+        width: u32,
+        height: u32,
+        layer_id: LayerId,
+    ) -> Result<Self, DomainError> {
+        let mut texture = Texture::new(namespace, path, width, height)?;
+        texture.add_layer(layer_id, "Layer 1".to_string())?;
+        texture.mark_saved();
+        Ok(Self::new(texture))
+    }
+
+    /// Composites all visible layers, writes the result via the provided writer,
+    /// and marks the texture as saved.
+    pub fn save_composite(
+        &mut self,
+        writer: &dyn ImageWriter,
+        path: &str,
+    ) -> Result<(), DomainError> {
+        let composite = self.texture.composite()?;
+        writer.write(path, &composite)?;
+        self.texture.mark_saved();
+        Ok(())
     }
 
     // -- Tool operations --
@@ -140,6 +199,9 @@ impl EditorService {
 
     // -- Undo/Redo --
 
+    /// Generic undo/redo swap: pops an entry from one stack, captures the current
+    /// state as the reverse entry, restores the popped snapshot, then pushes the
+    /// captured state onto the opposite stack.
     fn apply_history_swap(
         &mut self,
         pop: fn(&mut UndoManager) -> Option<UndoEntry>,
@@ -957,5 +1019,152 @@ mod tests {
 
         brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
         assert!(svc.can_undo());
+    }
+
+    // === Factory methods ===
+
+    #[test]
+    fn from_pixel_buffer_creates_editor_with_correct_pixels() {
+        let mut buf = PixelBuffer::new(4, 4).unwrap();
+        let red = Color::new(255, 0, 0, 255);
+        buf.set_pixel(1, 2, red).unwrap();
+
+        let layer_id = LayerId::new(42);
+        let svc = EditorService::from_pixel_buffer(
+            &buf,
+            "minecraft".into(),
+            "block/test".into(),
+            layer_id,
+        )
+        .unwrap();
+
+        assert_eq!(svc.texture().width(), 4);
+        assert_eq!(svc.texture().height(), 4);
+        assert_eq!(svc.texture().namespace(), "minecraft");
+        assert!(!svc.texture().is_dirty());
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+        assert_eq!(get_pixel(&svc, layer_id, 1, 2), red);
+        assert_eq!(get_pixel(&svc, layer_id, 0, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn from_pixel_buffer_starts_clean() {
+        let buf = PixelBuffer::new(2, 2).unwrap();
+        let svc =
+            EditorService::from_pixel_buffer(&buf, "ns".into(), "path".into(), LayerId::new(1))
+                .unwrap();
+        assert!(!svc.texture().is_dirty());
+    }
+
+    #[test]
+    fn new_blank_creates_transparent_layer() {
+        let layer_id = LayerId::new(10);
+        let svc = EditorService::new_blank("minecraft".into(), "block/new".into(), 8, 8, layer_id)
+            .unwrap();
+
+        assert_eq!(svc.texture().width(), 8);
+        assert_eq!(svc.texture().height(), 8);
+        assert!(!svc.texture().is_dirty());
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+        let layer = svc.texture().layer_stack().get_layer(layer_id).unwrap();
+        assert_eq!(layer.name(), "Layer 1");
+        assert_eq!(get_pixel(&svc, layer_id, 0, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn new_blank_starts_clean() {
+        let svc = EditorService::new_blank("ns".into(), "p".into(), 2, 2, LayerId::new(1)).unwrap();
+        assert!(!svc.texture().is_dirty());
+    }
+
+    #[test]
+    fn save_composite_marks_clean() {
+        use crate::domain::ports::ImageWriter;
+
+        struct NoopWriter;
+        impl ImageWriter for NoopWriter {
+            fn write(&self, _path: &str, _buffer: &PixelBuffer) -> Result<(), DomainError> {
+                Ok(())
+            }
+        }
+
+        let layer_id = LayerId::new(1);
+        let mut svc = EditorService::new_blank("ns".into(), "p".into(), 4, 4, layer_id).unwrap();
+        let mut tool = BrushTool::default();
+        brush_stroke(&mut svc, &mut tool, layer_id, 0, 0, Color::WHITE);
+        assert!(svc.texture().is_dirty());
+
+        svc.save_composite(&NoopWriter, "/tmp/test.png").unwrap();
+        assert!(!svc.texture().is_dirty());
+    }
+
+    #[test]
+    fn save_composite_failure_keeps_dirty() {
+        use crate::domain::ports::ImageWriter;
+
+        struct FailingWriter;
+        impl ImageWriter for FailingWriter {
+            fn write(&self, _path: &str, _buffer: &PixelBuffer) -> Result<(), DomainError> {
+                Err(DomainError::IoError {
+                    reason: "disk full".to_owned(),
+                })
+            }
+        }
+
+        let layer_id = LayerId::new(1);
+        let mut svc = EditorService::new_blank("ns".into(), "p".into(), 4, 4, layer_id).unwrap();
+        let mut tool = BrushTool::default();
+        brush_stroke(&mut svc, &mut tool, layer_id, 0, 0, Color::WHITE);
+        assert!(svc.texture().is_dirty());
+
+        let result = svc.save_composite(&FailingWriter, "/tmp/test.png");
+        assert!(result.is_err());
+        assert!(
+            svc.texture().is_dirty(),
+            "texture must remain dirty on save failure"
+        );
+    }
+
+    #[test]
+    fn factory_methods_start_with_empty_history() {
+        let svc = EditorService::new_blank("ns".into(), "p".into(), 2, 2, LayerId::new(1)).unwrap();
+        assert!(!svc.can_undo());
+        assert!(!svc.can_redo());
+
+        let buf = PixelBuffer::new(2, 2).unwrap();
+        let svc2 = EditorService::from_pixel_buffer(&buf, "ns".into(), "p".into(), LayerId::new(2))
+            .unwrap();
+        assert!(!svc2.can_undo());
+        assert!(!svc2.can_redo());
+    }
+
+    #[test]
+    fn save_composite_writes_composited_pixels() {
+        use crate::domain::ports::ImageWriter;
+        use std::cell::RefCell;
+
+        struct RecordingWriter {
+            data: RefCell<Vec<u8>>,
+        }
+        impl ImageWriter for RecordingWriter {
+            fn write(&self, _path: &str, buffer: &PixelBuffer) -> Result<(), DomainError> {
+                *self.data.borrow_mut() = buffer.pixels().to_vec();
+                Ok(())
+            }
+        }
+
+        let layer_id = LayerId::new(1);
+        let mut svc = EditorService::new_blank("ns".into(), "p".into(), 2, 2, layer_id).unwrap();
+        let mut tool = BrushTool::default();
+        brush_stroke(&mut svc, &mut tool, layer_id, 0, 0, Color::WHITE);
+
+        let writer = RecordingWriter {
+            data: RefCell::new(Vec::new()),
+        };
+        svc.save_composite(&writer, "out.png").unwrap();
+
+        let data = writer.data.borrow();
+        // First pixel should be white (255,255,255,255)
+        assert_eq!(&data[0..4], &[255, 255, 255, 255]);
     }
 }
