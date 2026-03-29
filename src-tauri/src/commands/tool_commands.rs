@@ -15,8 +15,8 @@ fn create_tool(name: &str) -> Result<Box<dyn Tool + Send>, AppError> {
     match name {
         "brush" => Ok(Box::new(BrushTool::default())),
         "eraser" => Ok(Box::new(EraserTool::default())),
-        "fill" => Ok(Box::new(FillTool::default())),
-        "color_picker" => Ok(Box::new(ColorPickerTool::default())),
+        "fill" => Ok(Box::<FillTool>::default()),
+        "color_picker" => Ok(Box::<ColorPickerTool>::default()),
         "line" => Ok(Box::new(LineTool::default())),
         "selection" => Ok(Box::new(SelectionTool::default())),
         _ => Err(AppError::Internal(format!("unknown tool: {name}"))),
@@ -24,6 +24,7 @@ fn create_tool(name: &str) -> Result<Box<dyn Tool + Send>, AppError> {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn tool_press(
     app: AppHandle,
     state: State<'_, Mutex<AppState>>,

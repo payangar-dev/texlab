@@ -8,20 +8,11 @@ use crate::use_cases::editor_service::EditorService;
 ///
 /// SAFETY: Only accessed through `Mutex<AppState>` (registered via `tauri::Builder::manage`),
 /// never shared directly across threads.
+#[derive(Default)]
 pub struct AppState {
     pub editor: Option<EditorService>,
     pub active_tool: Option<Box<dyn Tool + Send>>,
     pub active_layer_id: Option<LayerId>,
-}
-
-impl Default for AppState {
-    fn default() -> Self {
-        Self {
-            editor: None,
-            active_tool: None,
-            active_layer_id: None,
-        }
-    }
 }
 
 impl AppState {
