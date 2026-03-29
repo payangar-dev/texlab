@@ -57,6 +57,7 @@ impl Tool for SelectionTool {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::super::{BrushSize, ToolContext, ToolResult};
     use super::*;

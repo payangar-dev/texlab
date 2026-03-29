@@ -69,6 +69,7 @@ pub fn blend(base: Color, top: Color, mode: BlendMode, opacity: f32) -> Color {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 

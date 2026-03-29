@@ -48,8 +48,7 @@ impl Tool for LineTool {
                 && (py as u32) < ctx.buffer.height()
             {
                 ctx.buffer
-                    .set_pixel(px as u32, py as u32, ctx.color)
-                    .unwrap();
+                    .set_pixel(px as u32, py as u32, ctx.color)?;
             }
         }
 
@@ -58,6 +57,7 @@ impl Tool for LineTool {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::super::{BrushSize, ToolContext, ToolResult};
     use crate::domain::color::Color;
