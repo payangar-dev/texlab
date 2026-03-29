@@ -55,6 +55,7 @@ impl EditorService {
 
     // -- Tool operations --
 
+    #[allow(clippy::too_many_arguments)]
     fn run_tool(
         &mut self,
         tool: &mut dyn Tool,
@@ -369,7 +370,7 @@ mod tests {
     fn color_picker_does_not_create_undo_entry() {
         let mut svc = test_service();
         let id = LayerId::new(1);
-        let mut tool = ColorPickerTool::default();
+        let mut tool = ColorPickerTool;
 
         svc.apply_tool_press(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
             .unwrap();
@@ -445,7 +446,7 @@ mod tests {
     fn fill_tool_creates_undo_entry() {
         let mut svc = test_service();
         let id = LayerId::new(1);
-        let mut tool = FillTool::default();
+        let mut tool = FillTool;
 
         svc.apply_tool_press(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT)
             .unwrap();
