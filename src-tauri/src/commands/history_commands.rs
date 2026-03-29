@@ -8,10 +8,7 @@ use crate::error::AppError;
 use crate::state::AppState;
 
 #[tauri::command]
-pub fn undo(
-    app: AppHandle,
-    state: State<'_, Mutex<AppState>>,
-) -> Result<EditorStateDto, AppError> {
+pub fn undo(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<EditorStateDto, AppError> {
     let mut state = state
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
@@ -24,10 +21,7 @@ pub fn undo(
 }
 
 #[tauri::command]
-pub fn redo(
-    app: AppHandle,
-    state: State<'_, Mutex<AppState>>,
-) -> Result<EditorStateDto, AppError> {
+pub fn redo(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<EditorStateDto, AppError> {
     let mut state = state
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;

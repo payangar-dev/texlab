@@ -131,9 +131,7 @@ pub fn set_layer_blend_mode(
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
 
-    state
-        .editor_mut()?
-        .set_layer_blend_mode(parsed_id, mode)?;
+    state.editor_mut()?.set_layer_blend_mode(parsed_id, mode)?;
     let dto = build_editor_state_dto(state.editor.as_ref(), state.active_layer_id);
 
     emit_state_changed(&app);

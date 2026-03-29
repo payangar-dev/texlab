@@ -34,7 +34,7 @@ mod tests {
         data[1] = 0; // G
         data[2] = 0; // B
         data[3] = 255; // A
-        // Last pixel
+                       // Last pixel
         let last = ((width * height - 1) * 4) as usize;
         data[last] = 0;
         data[last + 1] = 255;

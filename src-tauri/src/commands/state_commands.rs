@@ -7,9 +7,7 @@ use crate::error::AppError;
 use crate::state::AppState;
 
 #[tauri::command]
-pub fn get_editor_state(
-    state: State<'_, Mutex<AppState>>,
-) -> Result<EditorStateDto, AppError> {
+pub fn get_editor_state(state: State<'_, Mutex<AppState>>) -> Result<EditorStateDto, AppError> {
     let state = state
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
@@ -21,9 +19,7 @@ pub fn get_editor_state(
 }
 
 #[tauri::command]
-pub fn get_composite(
-    state: State<'_, Mutex<AppState>>,
-) -> Result<CompositeDto, AppError> {
+pub fn get_composite(state: State<'_, Mutex<AppState>>) -> Result<CompositeDto, AppError> {
     let state = state
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;

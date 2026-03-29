@@ -46,8 +46,14 @@ pub fn tool_press(
     state.active_layer_id = Some(parsed_layer_id);
 
     let editor = state.editor_mut()?;
-    let result =
-        editor.apply_tool_press(&mut *tool_instance, parsed_layer_id, x, y, domain_color, brush)?;
+    let result = editor.apply_tool_press(
+        &mut *tool_instance,
+        parsed_layer_id,
+        x,
+        y,
+        domain_color,
+        brush,
+    )?;
 
     let composite = if result == ToolResult::PixelsModified {
         Some(editor.texture().composite()?)

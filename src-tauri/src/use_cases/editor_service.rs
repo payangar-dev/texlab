@@ -69,12 +69,11 @@ impl EditorService {
         let height = buffer.height();
         let mut texture = Texture::new(namespace, path, width, height)?;
         texture.add_layer(layer_id, "Background".to_string())?;
-        let layer = texture
-            .layer_stack_mut()
-            .get_layer_mut(layer_id)
-            .ok_or(DomainError::LayerNotFound {
+        let layer = texture.layer_stack_mut().get_layer_mut(layer_id).ok_or(
+            DomainError::LayerNotFound {
                 layer_id: layer_id.value(),
-            })?;
+            },
+        )?;
         for y in 0..height {
             for x in 0..width {
                 let color = buffer.get_pixel(x, y)?;
@@ -1051,22 +1050,17 @@ mod tests {
     #[test]
     fn from_pixel_buffer_starts_clean() {
         let buf = PixelBuffer::new(2, 2).unwrap();
-        let svc = EditorService::from_pixel_buffer(
-            &buf,
-            "ns".into(),
-            "path".into(),
-            LayerId::new(1),
-        )
-        .unwrap();
+        let svc =
+            EditorService::from_pixel_buffer(&buf, "ns".into(), "path".into(), LayerId::new(1))
+                .unwrap();
         assert!(!svc.texture().is_dirty());
     }
 
     #[test]
     fn new_blank_creates_transparent_layer() {
         let layer_id = LayerId::new(10);
-        let svc =
-            EditorService::new_blank("minecraft".into(), "block/new".into(), 8, 8, layer_id)
-                .unwrap();
+        let svc = EditorService::new_blank("minecraft".into(), "block/new".into(), 8, 8, layer_id)
+            .unwrap();
 
         assert_eq!(svc.texture().width(), 8);
         assert_eq!(svc.texture().height(), 8);
@@ -1079,8 +1073,7 @@ mod tests {
 
     #[test]
     fn new_blank_starts_clean() {
-        let svc =
-            EditorService::new_blank("ns".into(), "p".into(), 2, 2, LayerId::new(1)).unwrap();
+        let svc = EditorService::new_blank("ns".into(), "p".into(), 2, 2, LayerId::new(1)).unwrap();
         assert!(!svc.texture().is_dirty());
     }
 
@@ -1096,8 +1089,7 @@ mod tests {
         }
 
         let layer_id = LayerId::new(1);
-        let mut svc =
-            EditorService::new_blank("ns".into(), "p".into(), 4, 4, layer_id).unwrap();
+        let mut svc = EditorService::new_blank("ns".into(), "p".into(), 4, 4, layer_id).unwrap();
         let mut tool = BrushTool::default();
         brush_stroke(&mut svc, &mut tool, layer_id, 0, 0, Color::WHITE);
         assert!(svc.texture().is_dirty());
@@ -1120,15 +1112,17 @@ mod tests {
         }
 
         let layer_id = LayerId::new(1);
-        let mut svc =
-            EditorService::new_blank("ns".into(), "p".into(), 4, 4, layer_id).unwrap();
+        let mut svc = EditorService::new_blank("ns".into(), "p".into(), 4, 4, layer_id).unwrap();
         let mut tool = BrushTool::default();
         brush_stroke(&mut svc, &mut tool, layer_id, 0, 0, Color::WHITE);
         assert!(svc.texture().is_dirty());
 
         let result = svc.save_composite(&FailingWriter, "/tmp/test.png");
         assert!(result.is_err());
-        assert!(svc.texture().is_dirty(), "texture must remain dirty on save failure");
+        assert!(
+            svc.texture().is_dirty(),
+            "texture must remain dirty on save failure"
+        );
     }
 
     #[test]
@@ -1138,7 +1132,8 @@ mod tests {
         assert!(!svc.can_redo());
 
         let buf = PixelBuffer::new(2, 2).unwrap();
-        let svc2 = EditorService::from_pixel_buffer(&buf, "ns".into(), "p".into(), LayerId::new(2)).unwrap();
+        let svc2 = EditorService::from_pixel_buffer(&buf, "ns".into(), "p".into(), LayerId::new(2))
+            .unwrap();
         assert!(!svc2.can_undo());
         assert!(!svc2.can_redo());
     }
@@ -1159,8 +1154,7 @@ mod tests {
         }
 
         let layer_id = LayerId::new(1);
-        let mut svc =
-            EditorService::new_blank("ns".into(), "p".into(), 2, 2, layer_id).unwrap();
+        let mut svc = EditorService::new_blank("ns".into(), "p".into(), 2, 2, layer_id).unwrap();
         let mut tool = BrushTool::default();
         brush_stroke(&mut svc, &mut tool, layer_id, 0, 0, Color::WHITE);
 
