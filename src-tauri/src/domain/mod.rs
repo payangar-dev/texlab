@@ -17,6 +17,7 @@ pub mod ports;
 pub mod selection;
 pub mod texture;
 pub mod tools;
+pub mod undo;
 
 pub use blend::{blend, BlendMode};
 pub use color::Color;
@@ -28,3 +29,4 @@ pub use ports::{ImageReader, ImageWriter, PackScanner, TextureEntry};
 pub use selection::Selection;
 pub use texture::Texture;
 pub use tools::{BrushSize, ToolContext, ToolResult};
+pub use undo::{LayerSnapshot, OperationType, TextureSnapshot, UndoEntry, UndoManager};

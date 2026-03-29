@@ -19,9 +19,9 @@
 
 **Purpose**: Extend existing domain types to support snapshot restoration
 
-- [ ] T001 Add `EmptyHistory` variant to `DomainError` in src-tauri/src/domain/error.rs
-- [ ] T002 [P] Add `restore_from_snapshot()` method to `Layer` (bypasses lock, replaces buffer + all properties) in src-tauri/src/domain/layer.rs
-- [ ] T003 [P] Add `restore_from_snapshots()` method to `LayerStack` (replaces all layers from snapshot data) in src-tauri/src/domain/layer_stack.rs
+- [x] T001 Add `EmptyHistory` variant to `DomainError` in src-tauri/src/domain/error.rs
+- [x] T002 [P] Add `restore_from_snapshot()` method to `Layer` (bypasses lock, replaces buffer + all properties) in src-tauri/src/domain/layer.rs
+- [x] T003 [P] Add `restore_from_snapshots()` method to `LayerStack` (replaces all layers from snapshot data) in src-tauri/src/domain/layer_stack.rs
 
 ---
 
@@ -31,11 +31,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Implement `LayerSnapshot` (from_layer, fields), `TextureSnapshot` (capture, restore_to), `OperationType` enum, and `UndoEntry` (new, accessors) in src-tauri/src/domain/undo.rs
-- [ ] T005 Implement `UndoManager` (new, push, pop_undo, push_redo, pop_redo, can_undo, can_redo, undo_count, redo_count, clear) with VecDeque undo stack, Vec redo stack, and max_depth eviction in src-tauri/src/domain/undo.rs
-- [ ] T006 Register `pub mod undo;` and add re-exports (`LayerSnapshot`, `TextureSnapshot`, `OperationType`, `UndoEntry`, `UndoManager`) in src-tauri/src/domain/mod.rs
-- [ ] T007 Unit tests for snapshot round-trip: create LayerSnapshot from Layer, restore, verify pixel-perfect equality; capture TextureSnapshot from multi-layer stack, restore, verify all layers match in src-tauri/src/domain/undo.rs
-- [ ] T008 Unit tests for UndoManager: push+pop_undo, push+pop_redo, max_depth eviction drops oldest, push clears redo (fork behavior), can_undo/can_redo state, clear empties both stacks, undo_count/redo_count accuracy in src-tauri/src/domain/undo.rs
+- [x] T004 Implement `LayerSnapshot` (from_layer, fields), `TextureSnapshot` (capture, restore_to), `OperationType` enum, and `UndoEntry` (new, accessors) in src-tauri/src/domain/undo.rs
+- [x] T005 Implement `UndoManager` (new, push, pop_undo, push_redo, pop_redo, can_undo, can_redo, undo_count, redo_count, clear) with VecDeque undo stack, Vec redo stack, and max_depth eviction in src-tauri/src/domain/undo.rs
+- [x] T006 Register `pub mod undo;` and add re-exports (`LayerSnapshot`, `TextureSnapshot`, `OperationType`, `UndoEntry`, `UndoManager`) in src-tauri/src/domain/mod.rs
+- [x] T007 Unit tests for snapshot round-trip: create LayerSnapshot from Layer, restore, verify pixel-perfect equality; capture TextureSnapshot from multi-layer stack, restore, verify all layers match in src-tauri/src/domain/undo.rs
+- [x] T008 Unit tests for UndoManager: push+pop_undo, push+pop_redo, max_depth eviction drops oldest, push clears redo (fork behavior), can_undo/can_redo state, clear empties both stacks, undo_count/redo_count accuracy in src-tauri/src/domain/undo.rs
 
 **Checkpoint**: Snapshot infrastructure ready — EditorService implementation can begin
 
@@ -49,11 +49,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement `EditorService` struct (texture + undo_manager + pending_snapshot), `new()`, `with_max_history()`, `texture()`, `texture_mut()` in src-tauri/src/use_cases/editor_service.rs
-- [ ] T010 [US1] Implement `apply_tool_press()` (captures pending snapshot, delegates to tool.on_press via ToolContext), `apply_tool_drag()` (delegates to tool.on_drag), `apply_tool_release()` (delegates to tool.on_release, commits UndoEntry if PixelsModified occurred, discards pending if no modification) in src-tauri/src/use_cases/editor_service.rs
-- [ ] T011 [US1] Implement `undo()` (pop from undo stack, capture current state as redo entry, restore snapshot to layer stack) and `can_undo()` in src-tauri/src/use_cases/editor_service.rs
-- [ ] T012 [US1] Register `pub mod editor_service;` in src-tauri/src/use_cases/mod.rs
-- [ ] T013 [US1] Unit tests: single brush stroke + undo reverts pixels; multiple operations + sequential undo in reverse order; undo all operations back to initial state matches texture construction state; undo on empty history returns EmptyHistory error; ColorPicker tool does not create undo entry; SelectionTool does not create undo entry; undo restores exact pixel-level state in src-tauri/src/use_cases/editor_service.rs
+- [x] T009 [US1] Implement `EditorService` struct (texture + undo_manager + pending_snapshot), `new()`, `with_max_history()`, `texture()`, `texture_mut()` in src-tauri/src/use_cases/editor_service.rs
+- [x] T010 [US1] Implement `apply_tool_press()` (captures pending snapshot, delegates to tool.on_press via ToolContext), `apply_tool_drag()` (delegates to tool.on_drag), `apply_tool_release()` (delegates to tool.on_release, commits UndoEntry if PixelsModified occurred, discards pending if no modification) in src-tauri/src/use_cases/editor_service.rs
+- [x] T011 [US1] Implement `undo()` (pop from undo stack, capture current state as redo entry, restore snapshot to layer stack) and `can_undo()` in src-tauri/src/use_cases/editor_service.rs
+- [x] T012 [US1] Register `pub mod editor_service;` in src-tauri/src/use_cases/mod.rs
+- [x] T013 [US1] Unit tests: single brush stroke + undo reverts pixels; multiple operations + sequential undo in reverse order; undo all operations back to initial state matches texture construction state; undo on empty history returns EmptyHistory error; ColorPicker tool does not create undo entry; SelectionTool does not create undo entry; undo restores exact pixel-level state in src-tauri/src/use_cases/editor_service.rs
 
 **Checkpoint**: Drawing undo is fully functional. Users can undo brush/eraser/fill/line strokes.
 
@@ -67,8 +67,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Implement `redo()` (pop from redo stack, capture current state as undo entry, restore snapshot to layer stack) and `can_redo()` in src-tauri/src/use_cases/editor_service.rs
-- [ ] T015 [US2] Unit tests: single undo + redo restores; multiple undo + multiple redo in order; redo on empty returns EmptyHistory error; new operation after undo clears all redo entries (fork behavior); can_undo/can_redo report correctly at all times (empty, mid-history, after fork) in src-tauri/src/use_cases/editor_service.rs
+- [x] T014 [US2] Implement `redo()` (pop from redo stack, capture current state as undo entry, restore snapshot to layer stack) and `can_redo()` in src-tauri/src/use_cases/editor_service.rs
+- [x] T015 [US2] Unit tests: single undo + redo restores; multiple undo + multiple redo in order; redo on empty returns EmptyHistory error; new operation after undo clears all redo entries (fork behavior); can_undo/can_redo report correctly at all times (empty, mid-history, after fork) in src-tauri/src/use_cases/editor_service.rs
 
 **Checkpoint**: Full undo/redo cycle works for drawing operations. Fork behavior verified.
 
@@ -82,10 +82,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T016 [P] [US3] Implement `add_layer()` and `remove_layer()` with undo recording (snapshot before, apply mutation, push entry) in src-tauri/src/use_cases/editor_service.rs
-- [ ] T017 [US3] Implement `move_layer()` with undo recording in src-tauri/src/use_cases/editor_service.rs
-- [ ] T018 [US3] Implement `set_layer_opacity()`, `set_layer_blend_mode()`, `set_layer_visibility()`, `set_layer_name()`, `set_layer_locked()` with undo recording (each change = separate undo entry) in src-tauri/src/use_cases/editor_service.rs
-- [ ] T019 [US3] Unit tests: add layer + undo removes it; remove layer + undo restores it with content and properties; reorder layers + undo reverts order; each property change (opacity, blend_mode, visibility, name, locked) + undo reverts value; same property changed 3 times in succession produces 3 separate undo steps; undo bypasses layer lock; mixed draw + layer ops undo in correct order in src-tauri/src/use_cases/editor_service.rs
+- [x] T016 [P] [US3] Implement `add_layer()` and `remove_layer()` with undo recording (snapshot before, apply mutation, push entry) in src-tauri/src/use_cases/editor_service.rs
+- [x] T017 [US3] Implement `move_layer()` with undo recording in src-tauri/src/use_cases/editor_service.rs
+- [x] T018 [US3] Implement `set_layer_opacity()`, `set_layer_blend_mode()`, `set_layer_visibility()`, `set_layer_name()`, `set_layer_locked()` with undo recording (each change = separate undo entry) in src-tauri/src/use_cases/editor_service.rs
+- [x] T019 [US3] Unit tests: add layer + undo removes it; remove layer + undo restores it with content and properties; reorder layers + undo reverts order; each property change (opacity, blend_mode, visibility, name, locked) + undo reverts value; same property changed 3 times in succession produces 3 separate undo steps; undo bypasses layer lock; mixed draw + layer ops undo in correct order in src-tauri/src/use_cases/editor_service.rs
 
 **Checkpoint**: All six operation types (draw, layer add/remove/reorder/property change) are undoable and redoable.
 
@@ -99,7 +99,7 @@
 
 ### Implementation for User Story 4
 
-- [ ] T020 [US4] Unit tests: perform 101 operations, verify undo_count is 100; verify oldest operation is unreachable; verify newest 100 operations are all undoable; verify memory stays bounded (no leak in undo/redo cycle at capacity) in src-tauri/src/use_cases/editor_service.rs
+- [x] T020 [US4] Unit tests: perform 101 operations, verify undo_count is 100; verify oldest operation is unreachable; verify newest 100 operations are all undoable; verify memory stays bounded (no leak in undo/redo cycle at capacity) in src-tauri/src/use_cases/editor_service.rs
 
 **Checkpoint**: History limit is enforced and tested. No implementation task needed — UndoManager eviction was built in Phase 2.
 
@@ -109,9 +109,9 @@
 
 **Purpose**: Final verification and edge case coverage
 
-- [ ] T021 Verify all public types from domain/undo.rs are properly re-exported in src-tauri/src/domain/mod.rs
-- [ ] T022 Run `cargo test` full suite from src-tauri/, verify zero regressions with existing domain tests (layer, layer_stack, pixel_buffer, tools, color, blend, selection)
-- [ ] T023 Run quickstart.md verification commands: `cargo test --lib domain::undo` and `cargo test --lib use_cases::editor_service`
+- [x] T021 Verify all public types from domain/undo.rs are properly re-exported in src-tauri/src/domain/mod.rs
+- [x] T022 Run `cargo test` full suite from src-tauri/, verify zero regressions with existing domain tests (layer, layer_stack, pixel_buffer, tools, color, blend, selection)
+- [x] T023 Run quickstart.md verification commands: `cargo test --lib domain::undo` and `cargo test --lib use_cases::editor_service`
 
 ---
 

@@ -2,6 +2,7 @@ use super::blend::BlendMode;
 use super::color::Color;
 use super::error::DomainError;
 use super::pixel_buffer::PixelBuffer;
+use super::undo::LayerSnapshot;
 
 /// Unique layer identifier. Newtype over `u128` for UUID compatibility
 /// without importing the `uuid` crate into the domain.
@@ -120,6 +121,27 @@ impl Layer {
             return Err(DomainError::EmptyName);
         }
         self.name = name;
+        Ok(())
+    }
+
+    /// Creates a layer from a snapshot.
+    pub(crate) fn from_snapshot(snapshot: LayerSnapshot) -> Result<Self, DomainError> {
+        let buffer =
+            PixelBuffer::from_raw_parts(snapshot.width, snapshot.height, snapshot.data)?;
+        Ok(Self {
+            id: snapshot.id,
+            name: snapshot.name,
+            buffer,
+            opacity: snapshot.opacity,
+            blend_mode: snapshot.blend_mode,
+            visible: snapshot.visible,
+            locked: snapshot.locked,
+        })
+    }
+
+    /// Restores this layer's state from a snapshot.
+    pub fn restore_from_snapshot(&mut self, snapshot: LayerSnapshot) -> Result<(), DomainError> {
+        *self = Self::from_snapshot(snapshot)?;
         Ok(())
     }
 }

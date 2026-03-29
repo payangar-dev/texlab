@@ -1,0 +1,995 @@
+use crate::domain::blend::BlendMode;
+use crate::domain::color::Color;
+use crate::domain::error::DomainError;
+use crate::domain::layer::{Layer, LayerId};
+use crate::domain::texture::Texture;
+use crate::domain::tools::{BrushSize, Tool, ToolContext, ToolResult};
+use crate::domain::undo::{OperationType, TextureSnapshot, UndoEntry, UndoManager};
+
+const DEFAULT_MAX_HISTORY: usize = 100;
+
+enum ToolPhase {
+    Press,
+    Drag,
+    Release,
+}
+
+/// Orchestrates all undoable operations on a texture.
+pub struct EditorService {
+    texture: Texture,
+    undo_manager: UndoManager,
+    pending_snapshot: Option<TextureSnapshot>,
+    pixels_modified_in_cycle: bool,
+}
+
+impl EditorService {
+    pub fn new(texture: Texture) -> Self {
+        Self::with_max_history(texture, DEFAULT_MAX_HISTORY)
+    }
+
+    pub fn with_max_history(texture: Texture, max_depth: usize) -> Self {
+        Self {
+            texture,
+            undo_manager: UndoManager::new(max_depth),
+            pending_snapshot: None,
+            pixels_modified_in_cycle: false,
+        }
+    }
+
+    pub fn texture(&self) -> &Texture {
+        &self.texture
+    }
+
+    /// Direct mutation access WITHOUT undo tracking.
+    pub(crate) fn texture_mut(&mut self) -> &mut Texture {
+        &mut self.texture
+    }
+
+    pub fn can_undo(&self) -> bool {
+        self.undo_manager.can_undo()
+    }
+
+    pub fn can_redo(&self) -> bool {
+        self.undo_manager.can_redo()
+    }
+
+    // -- Tool operations --
+
+    fn run_tool(
+        &mut self,
+        tool: &mut dyn Tool,
+        phase: ToolPhase,
+        layer_id: LayerId,
+        x: u32,
+        y: u32,
+        color: Color,
+        brush_size: BrushSize,
+    ) -> Result<ToolResult, DomainError> {
+        let layer = self
+            .texture
+            .layer_stack_mut()
+            .get_layer_mut(layer_id)
+            .ok_or(DomainError::LayerNotFound {
+                layer_id: layer_id.value(),
+            })?;
+        let buffer = layer.buffer_mut()?;
+        let mut ctx = ToolContext {
+            buffer,
+            color,
+            brush_size,
+        };
+        let result = match phase {
+            ToolPhase::Press => tool.on_press(&mut ctx, x, y)?,
+            ToolPhase::Drag => tool.on_drag(&mut ctx, x, y)?,
+            ToolPhase::Release => tool.on_release(&mut ctx, x, y)?,
+        };
+        if result == ToolResult::PixelsModified {
+            self.pixels_modified_in_cycle = true;
+            self.texture.mark_dirty();
+        }
+        Ok(result)
+    }
+
+    pub fn apply_tool_press(
+        &mut self,
+        tool: &mut dyn Tool,
+        layer_id: LayerId,
+        x: u32,
+        y: u32,
+        color: Color,
+        brush_size: BrushSize,
+    ) -> Result<ToolResult, DomainError> {
+        self.pending_snapshot = Some(TextureSnapshot::capture(self.texture.layer_stack()));
+        self.pixels_modified_in_cycle = false;
+        self.run_tool(tool, ToolPhase::Press, layer_id, x, y, color, brush_size)
+    }
+
+    pub fn apply_tool_drag(
+        &mut self,
+        tool: &mut dyn Tool,
+        layer_id: LayerId,
+        x: u32,
+        y: u32,
+        color: Color,
+        brush_size: BrushSize,
+    ) -> Result<ToolResult, DomainError> {
+        self.run_tool(tool, ToolPhase::Drag, layer_id, x, y, color, brush_size)
+    }
+
+    pub fn apply_tool_release(
+        &mut self,
+        tool: &mut dyn Tool,
+        layer_id: LayerId,
+        x: u32,
+        y: u32,
+        color: Color,
+        brush_size: BrushSize,
+    ) -> Result<ToolResult, DomainError> {
+        let result =
+            self.run_tool(tool, ToolPhase::Release, layer_id, x, y, color, brush_size)?;
+        if self.pixels_modified_in_cycle {
+            if let Some(snapshot) = self.pending_snapshot.take() {
+                self.undo_manager
+                    .push(UndoEntry::new(OperationType::Draw, snapshot));
+            }
+        } else {
+            self.pending_snapshot = None;
+        }
+        Ok(result)
+    }
+
+    // -- Undo/Redo --
+
+    fn apply_history_swap(
+        &mut self,
+        pop: fn(&mut UndoManager) -> Option<UndoEntry>,
+        push: fn(&mut UndoManager, UndoEntry),
+    ) -> Result<(), DomainError> {
+        let entry = pop(&mut self.undo_manager).ok_or(DomainError::EmptyHistory)?;
+        let (operation, snapshot) = entry.into_parts();
+        let current = TextureSnapshot::capture(self.texture.layer_stack());
+        self.texture
+            .layer_stack_mut()
+            .restore_from_snapshots(snapshot)?;
+        push(&mut self.undo_manager, UndoEntry::new(operation, current));
+        self.texture.mark_dirty();
+        Ok(())
+    }
+
+    pub fn undo(&mut self) -> Result<(), DomainError> {
+        self.apply_history_swap(UndoManager::pop_undo, UndoManager::push_redo)
+    }
+
+    pub fn redo(&mut self) -> Result<(), DomainError> {
+        self.apply_history_swap(UndoManager::pop_redo, UndoManager::push_undo)
+    }
+
+    // -- Layer operations --
+
+    pub fn add_layer(&mut self, id: LayerId, name: &str) -> Result<(), DomainError> {
+        let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
+        self.texture.add_layer(id, name.to_string())?;
+        self.undo_manager
+            .push(UndoEntry::new(OperationType::LayerAdd, snapshot));
+        Ok(())
+    }
+
+    pub fn remove_layer(&mut self, id: LayerId) -> Result<(), DomainError> {
+        let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
+        self.texture.layer_stack_mut().remove_layer(id)?;
+        self.texture.mark_dirty();
+        self.undo_manager
+            .push(UndoEntry::new(OperationType::LayerRemove, snapshot));
+        Ok(())
+    }
+
+    pub fn move_layer(&mut self, from_index: usize, to_index: usize) -> Result<(), DomainError> {
+        let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
+        self.texture
+            .layer_stack_mut()
+            .move_layer(from_index, to_index)?;
+        self.texture.mark_dirty();
+        self.undo_manager
+            .push(UndoEntry::new(OperationType::LayerReorder, snapshot));
+        Ok(())
+    }
+
+    fn with_layer_undo(
+        &mut self,
+        id: LayerId,
+        op: OperationType,
+        f: impl FnOnce(&mut Layer) -> Result<(), DomainError>,
+    ) -> Result<(), DomainError> {
+        let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
+        let layer = self
+            .texture
+            .layer_stack_mut()
+            .get_layer_mut(id)
+            .ok_or(DomainError::LayerNotFound {
+                layer_id: id.value(),
+            })?;
+        f(layer)?;
+        self.texture.mark_dirty();
+        self.undo_manager.push(UndoEntry::new(op, snapshot));
+        Ok(())
+    }
+
+    pub fn set_layer_opacity(&mut self, id: LayerId, opacity: f32) -> Result<(), DomainError> {
+        self.with_layer_undo(id, OperationType::LayerPropertyChange, |layer| {
+            layer.set_opacity(opacity);
+            Ok(())
+        })
+    }
+
+    pub fn set_layer_blend_mode(
+        &mut self,
+        id: LayerId,
+        mode: BlendMode,
+    ) -> Result<(), DomainError> {
+        self.with_layer_undo(id, OperationType::LayerPropertyChange, |layer| {
+            layer.set_blend_mode(mode);
+            Ok(())
+        })
+    }
+
+    pub fn set_layer_visibility(
+        &mut self,
+        id: LayerId,
+        visible: bool,
+    ) -> Result<(), DomainError> {
+        self.with_layer_undo(id, OperationType::LayerPropertyChange, |layer| {
+            layer.set_visible(visible);
+            Ok(())
+        })
+    }
+
+    pub fn set_layer_name(&mut self, id: LayerId, name: &str) -> Result<(), DomainError> {
+        let name = name.to_string();
+        self.with_layer_undo(id, OperationType::LayerPropertyChange, move |layer| {
+            layer.set_name(name)
+        })
+    }
+
+    pub fn set_layer_locked(&mut self, id: LayerId, locked: bool) -> Result<(), DomainError> {
+        self.with_layer_undo(id, OperationType::LayerPropertyChange, |layer| {
+            layer.set_locked(locked);
+            Ok(())
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::domain::tools::{
+        BrushTool, ColorPickerTool, EraserTool, FillTool, LineTool, SelectionTool,
+    };
+
+    fn test_texture() -> Texture {
+        Texture::new("minecraft".into(), "textures/block/stone.png".into(), 4, 4).unwrap()
+    }
+
+    fn test_service() -> EditorService {
+        let mut tex = test_texture();
+        tex.add_layer(LayerId::new(1), "base".to_string())
+            .unwrap();
+        EditorService::new(tex)
+    }
+
+    fn brush_stroke(
+        svc: &mut EditorService,
+        tool: &mut BrushTool,
+        layer_id: LayerId,
+        x: u32,
+        y: u32,
+        color: Color,
+    ) {
+        svc.apply_tool_press(tool, layer_id, x, y, color, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_release(tool, layer_id, x, y, color, BrushSize::DEFAULT)
+            .unwrap();
+    }
+
+    fn get_pixel(svc: &EditorService, layer_id: LayerId, x: u32, y: u32) -> Color {
+        svc.texture()
+            .layer_stack()
+            .get_layer(layer_id)
+            .unwrap()
+            .buffer()
+            .get_pixel(x, y)
+            .unwrap()
+    }
+
+    fn get_layer_data(svc: &EditorService, layer_id: LayerId) -> Vec<u8> {
+        svc.texture()
+            .layer_stack()
+            .get_layer(layer_id)
+            .unwrap()
+            .buffer()
+            .clone_data()
+    }
+
+    // === US1: Undo a Drawing Mistake (T013) ===
+
+    #[test]
+    fn single_brush_stroke_undo_reverts_pixels() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let red = Color::new(255, 0, 0, 255);
+        let mut tool = BrushTool::default();
+
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, red);
+        assert_eq!(get_pixel(&svc, id, 0, 0), red);
+
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn multiple_operations_sequential_undo_in_reverse_order() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let red = Color::new(255, 0, 0, 255);
+        let blue = Color::new(0, 0, 255, 255);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, red);
+        brush_stroke(&mut svc, &mut tool, id, 1, 1, blue);
+
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), red);
+        assert_eq!(get_pixel(&svc, id, 1, 1), Color::TRANSPARENT);
+
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn undo_all_back_to_initial_state() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        let initial = get_layer_data(&svc, id);
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
+        brush_stroke(&mut svc, &mut tool, id, 1, 1, Color::BLACK);
+        brush_stroke(&mut svc, &mut tool, id, 2, 2, Color::new(255, 0, 0, 255));
+
+        svc.undo().unwrap();
+        svc.undo().unwrap();
+        svc.undo().unwrap();
+
+        assert_eq!(initial, get_layer_data(&svc, id));
+    }
+
+    #[test]
+    fn undo_on_empty_history_returns_error() {
+        let mut svc = test_service();
+        assert_eq!(svc.undo().unwrap_err(), DomainError::EmptyHistory);
+    }
+
+    #[test]
+    fn color_picker_does_not_create_undo_entry() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = ColorPickerTool::default();
+
+        svc.apply_tool_press(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_release(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
+            .unwrap();
+
+        assert!(!svc.can_undo());
+    }
+
+    #[test]
+    fn selection_tool_does_not_create_undo_entry() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = SelectionTool::default();
+
+        svc.apply_tool_press(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_release(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
+            .unwrap();
+
+        assert!(!svc.can_undo());
+    }
+
+    #[test]
+    fn undo_restores_exact_pixel_state() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 2, 3, Color::new(42, 84, 168, 200));
+        let post_stroke = get_layer_data(&svc, id);
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
+        svc.undo().unwrap();
+
+        assert_eq!(post_stroke, get_layer_data(&svc, id));
+    }
+
+    #[test]
+    fn eraser_tool_creates_undo_entry() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut brush = BrushTool::default();
+        let mut eraser = EraserTool::default();
+
+        brush_stroke(&mut svc, &mut brush, id, 0, 0, Color::WHITE);
+
+        svc.apply_tool_press(&mut eraser, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_release(&mut eraser, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
+            .unwrap();
+
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::WHITE);
+    }
+
+    #[test]
+    fn fill_tool_creates_undo_entry() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = FillTool::default();
+
+        svc.apply_tool_press(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_release(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+            .unwrap();
+
+        assert!(svc.can_undo());
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn line_tool_creates_undo_entry() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = LineTool::default();
+
+        svc.apply_tool_press(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_release(&mut tool, id, 3, 3, Color::WHITE, BrushSize::DEFAULT)
+            .unwrap();
+
+        assert!(svc.can_undo());
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn drag_modifying_pixels_creates_undo_entry() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let red = Color::new(255, 0, 0, 255);
+        let mut tool = BrushTool::default();
+
+        svc.apply_tool_press(&mut tool, id, 0, 0, red, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_drag(&mut tool, id, 2, 2, red, BrushSize::DEFAULT)
+            .unwrap();
+        svc.apply_tool_release(&mut tool, id, 2, 2, red, BrushSize::DEFAULT)
+            .unwrap();
+
+        assert!(svc.can_undo());
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+        assert_eq!(get_pixel(&svc, id, 2, 2), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn tool_press_on_missing_layer_returns_error() {
+        let mut svc = test_service();
+        let missing = LayerId::new(999);
+        let mut tool = BrushTool::default();
+
+        let err = svc
+            .apply_tool_press(&mut tool, missing, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+            .unwrap_err();
+        assert_eq!(err, DomainError::LayerNotFound { layer_id: 999 });
+    }
+
+    // === US2: Redo a Reverted Action (T015) ===
+
+    #[test]
+    fn single_undo_redo_restores() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::new(255, 0, 0, 255));
+        let post_stroke = get_layer_data(&svc, id);
+
+        svc.undo().unwrap();
+        svc.redo().unwrap();
+
+        assert_eq!(post_stroke, get_layer_data(&svc, id));
+    }
+
+    #[test]
+    fn multiple_undo_multiple_redo_in_order() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let red = Color::new(255, 0, 0, 255);
+        let blue = Color::new(0, 0, 255, 255);
+        let green = Color::new(0, 255, 0, 255);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, red);
+        brush_stroke(&mut svc, &mut tool, id, 1, 1, blue);
+        brush_stroke(&mut svc, &mut tool, id, 2, 2, green);
+
+        svc.undo().unwrap();
+        svc.undo().unwrap();
+        svc.undo().unwrap();
+
+        svc.redo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), red);
+
+        svc.redo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 1, 1), blue);
+
+        svc.redo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 2, 2), green);
+    }
+
+    #[test]
+    fn redo_on_empty_returns_error() {
+        let mut svc = test_service();
+        assert_eq!(svc.redo().unwrap_err(), DomainError::EmptyHistory);
+    }
+
+    #[test]
+    fn new_operation_after_undo_clears_redo() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
+        brush_stroke(&mut svc, &mut tool, id, 1, 1, Color::BLACK);
+
+        svc.undo().unwrap();
+        assert!(svc.can_redo());
+
+        brush_stroke(&mut svc, &mut tool, id, 2, 2, Color::new(255, 0, 0, 255));
+        assert!(!svc.can_redo());
+        assert_eq!(svc.redo().unwrap_err(), DomainError::EmptyHistory);
+    }
+
+    #[test]
+    fn can_undo_can_redo_correct_at_all_times() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        assert!(!svc.can_undo());
+        assert!(!svc.can_redo());
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
+        assert!(svc.can_undo());
+        assert!(!svc.can_redo());
+
+        svc.undo().unwrap();
+        assert!(!svc.can_undo());
+        assert!(svc.can_redo());
+
+        svc.redo().unwrap();
+        assert!(svc.can_undo());
+        assert!(!svc.can_redo());
+
+        svc.undo().unwrap();
+        brush_stroke(&mut svc, &mut tool, id, 1, 1, Color::BLACK);
+        assert!(svc.can_undo());
+        assert!(!svc.can_redo());
+    }
+
+    // === US3: Undo Layer Management Actions (T019) ===
+
+    #[test]
+    fn add_layer_undo_removes_it() {
+        let mut svc = test_service();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+
+        svc.add_layer(LayerId::new(2), "second").unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 2);
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+        assert!(svc
+            .texture()
+            .layer_stack()
+            .get_layer(LayerId::new(2))
+            .is_none());
+    }
+
+    #[test]
+    fn remove_layer_undo_restores_with_content_and_properties() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let red = Color::new(255, 0, 0, 255);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, red);
+        svc.set_layer_opacity(id, 0.5).unwrap();
+        svc.set_layer_blend_mode(id, BlendMode::Multiply).unwrap();
+
+        let pre_remove = get_layer_data(&svc, id);
+
+        svc.remove_layer(id).unwrap();
+        assert!(svc.texture().layer_stack().is_empty());
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+        assert_eq!(get_layer_data(&svc, id), pre_remove);
+        let layer = svc.texture().layer_stack().get_layer(id).unwrap();
+        assert_eq!(layer.opacity(), 0.5);
+        assert_eq!(layer.blend_mode(), BlendMode::Multiply);
+    }
+
+    #[test]
+    fn reorder_layers_undo_reverts_order() {
+        let mut svc = test_service();
+        svc.add_layer(LayerId::new(2), "second").unwrap();
+        svc.add_layer(LayerId::new(3), "third").unwrap();
+
+        assert_eq!(svc.texture().layer_stack().layers()[0].name(), "base");
+        assert_eq!(svc.texture().layer_stack().layers()[2].name(), "third");
+
+        svc.move_layer(0, 2).unwrap();
+        assert_eq!(svc.texture().layer_stack().layers()[0].name(), "second");
+        assert_eq!(svc.texture().layer_stack().layers()[2].name(), "base");
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().layers()[0].name(), "base");
+        assert_eq!(svc.texture().layer_stack().layers()[2].name(), "third");
+    }
+
+    #[test]
+    fn opacity_change_undo_reverts() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.set_layer_opacity(id, 0.3).unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            0.3
+        );
+
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            1.0
+        );
+    }
+
+    #[test]
+    fn blend_mode_change_undo_reverts() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.set_layer_blend_mode(id, BlendMode::Screen).unwrap();
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .blend_mode(),
+            BlendMode::Normal
+        );
+    }
+
+    #[test]
+    fn visibility_change_undo_reverts() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.set_layer_visibility(id, false).unwrap();
+        assert!(!svc
+            .texture()
+            .layer_stack()
+            .get_layer(id)
+            .unwrap()
+            .is_visible());
+
+        svc.undo().unwrap();
+        assert!(svc
+            .texture()
+            .layer_stack()
+            .get_layer(id)
+            .unwrap()
+            .is_visible());
+    }
+
+    #[test]
+    fn name_change_undo_reverts() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.set_layer_name(id, "renamed").unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .name(),
+            "renamed"
+        );
+
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .name(),
+            "base"
+        );
+    }
+
+    #[test]
+    fn locked_change_undo_reverts() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.set_layer_locked(id, true).unwrap();
+        assert!(svc
+            .texture()
+            .layer_stack()
+            .get_layer(id)
+            .unwrap()
+            .is_locked());
+
+        svc.undo().unwrap();
+        assert!(!svc
+            .texture()
+            .layer_stack()
+            .get_layer(id)
+            .unwrap()
+            .is_locked());
+    }
+
+    #[test]
+    fn same_property_three_times_produces_three_undo_steps() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.set_layer_opacity(id, 0.8).unwrap();
+        svc.set_layer_opacity(id, 0.5).unwrap();
+        svc.set_layer_opacity(id, 0.2).unwrap();
+
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            0.5
+        );
+
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            0.8
+        );
+
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            1.0
+        );
+    }
+
+    #[test]
+    fn undo_bypasses_layer_lock() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
+        svc.set_layer_locked(id, true).unwrap();
+
+        svc.undo().unwrap();
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+    }
+
+    #[test]
+    fn mixed_draw_and_layer_ops_undo_in_correct_order() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
+        svc.add_layer(LayerId::new(2), "second").unwrap();
+        svc.set_layer_opacity(id, 0.5).unwrap();
+
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            1.0
+        );
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+
+        svc.undo().unwrap();
+        assert_eq!(get_pixel(&svc, id, 0, 0), Color::TRANSPARENT);
+    }
+
+    // === US3 Redo: Layer operations redo ===
+
+    #[test]
+    fn add_layer_redo_restores() {
+        let mut svc = test_service();
+        svc.add_layer(LayerId::new(2), "second").unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 2);
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+
+        svc.redo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 2);
+        assert!(svc
+            .texture()
+            .layer_stack()
+            .get_layer(LayerId::new(2))
+            .is_some());
+    }
+
+    #[test]
+    fn remove_layer_redo_removes_again() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.remove_layer(id).unwrap();
+        assert!(svc.texture().layer_stack().is_empty());
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+
+        svc.redo().unwrap();
+        assert!(svc.texture().layer_stack().is_empty());
+    }
+
+    #[test]
+    fn property_change_redo_reapplies() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+
+        svc.set_layer_opacity(id, 0.5).unwrap();
+        svc.undo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            1.0
+        );
+
+        svc.redo().unwrap();
+        assert_eq!(
+            svc.texture()
+                .layer_stack()
+                .get_layer(id)
+                .unwrap()
+                .opacity(),
+            0.5
+        );
+    }
+
+    // === US4: History Limit Protection (T020) ===
+
+    #[test]
+    fn history_limit_enforced_at_101_operations() {
+        let mut tex = test_texture();
+        tex.add_layer(LayerId::new(1), "base".to_string())
+            .unwrap();
+        let mut svc = EditorService::with_max_history(tex, 100);
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        for i in 0..101u32 {
+            brush_stroke(
+                &mut svc,
+                &mut tool,
+                id,
+                i % 4,
+                (i / 4) % 4,
+                Color::new(i as u8, 0, 0, 255),
+            );
+        }
+
+        let mut count = 0;
+        while svc.can_undo() {
+            svc.undo().unwrap();
+            count += 1;
+        }
+        assert_eq!(count, 100);
+    }
+
+    #[test]
+    fn oldest_operation_is_unreachable() {
+        let mut tex = test_texture();
+        tex.add_layer(LayerId::new(1), "base".to_string())
+            .unwrap();
+        let mut svc = EditorService::with_max_history(tex, 3);
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        let initial = get_layer_data(&svc, id);
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::new(10, 0, 0, 255));
+        brush_stroke(&mut svc, &mut tool, id, 1, 0, Color::new(20, 0, 0, 255));
+        brush_stroke(&mut svc, &mut tool, id, 2, 0, Color::new(30, 0, 0, 255));
+        brush_stroke(&mut svc, &mut tool, id, 3, 0, Color::new(40, 0, 0, 255));
+
+        svc.undo().unwrap();
+        svc.undo().unwrap();
+        svc.undo().unwrap();
+        assert!(svc.undo().is_err());
+
+        assert_ne!(initial, get_layer_data(&svc, id));
+    }
+
+    #[test]
+    fn memory_stays_bounded_at_capacity() {
+        let mut tex = test_texture();
+        tex.add_layer(LayerId::new(1), "base".to_string())
+            .unwrap();
+        let mut svc = EditorService::with_max_history(tex, 5);
+        let id = LayerId::new(1);
+        let mut tool = BrushTool::default();
+
+        for i in 0..20u32 {
+            brush_stroke(
+                &mut svc,
+                &mut tool,
+                id,
+                i % 4,
+                (i / 4) % 4,
+                Color::new(i as u8, 0, 0, 255),
+            );
+        }
+
+        for _ in 0..5 {
+            svc.undo().unwrap();
+        }
+        for _ in 0..5 {
+            svc.redo().unwrap();
+        }
+
+        brush_stroke(&mut svc, &mut tool, id, 0, 0, Color::WHITE);
+        assert!(svc.can_undo());
+    }
+}
