@@ -47,8 +47,7 @@ impl Tool for LineTool {
                 && (px as u32) < ctx.buffer.width()
                 && (py as u32) < ctx.buffer.height()
             {
-                ctx.buffer
-                    .set_pixel(px as u32, py as u32, ctx.color)?;
+                ctx.buffer.set_pixel(px as u32, py as u32, ctx.color)?;
             }
         }
 
