@@ -17,8 +17,9 @@
       {
         "label": "main",
         "title": "TexLab",
-        "width": 1280,
-        "height": 800,
+        "decorations": false,
+        "width": 1440,
+        "height": 900,
         "minWidth": 1024,
         "minHeight": 768,
         "resizable": true,

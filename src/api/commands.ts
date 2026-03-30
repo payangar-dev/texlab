@@ -194,6 +194,16 @@ export function redo(): Promise<EditorStateDto> {
   return invoke("redo");
 }
 
+// --- Layout persistence commands ---
+
+export function saveWorkspaceLayout(layoutJson: string): Promise<void> {
+  return invoke("save_workspace_layout", { layoutJson });
+}
+
+export function loadWorkspaceLayout(): Promise<string | null> {
+  return invoke("load_workspace_layout");
+}
+
 // --- State query commands ---
 
 export function getEditorState(): Promise<EditorStateDto> {

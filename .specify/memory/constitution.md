@@ -113,7 +113,8 @@ freely arrange.
   belong in the panel body. The docking framework manages minimize, close,
   and detach.
 - Layout persistence: the panel arrangement is saved to
-  `~/.texlab/workspace.json` and restored on app launch.
+  `<app_data_dir>/workspace.json` (via Tauri path API) and restored on
+  app launch.
 
 ## Technology Stack
 
