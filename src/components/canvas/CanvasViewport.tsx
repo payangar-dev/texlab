@@ -24,7 +24,7 @@ export function notifyCursorListeners(pixel: { x: number; y: number } | null): v
   }
 }
 
-const CanvasViewport = memo(function CanvasViewport() {
+const CanvasViewport = memo(function CanvasViewport(_props?: Record<string, unknown>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const texture = useEditorStore((s) => s.texture);
@@ -86,7 +86,8 @@ const CanvasViewport = memo(function CanvasViewport() {
       <div
         ref={containerRef}
         style={{
-          flex: 1,
+          width: "100%",
+          height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -105,7 +106,8 @@ const CanvasViewport = memo(function CanvasViewport() {
     <div
       ref={containerRef}
       style={{
-        flex: 1,
+        width: "100%",
+        height: "100%",
         overflow: "hidden",
         position: "relative",
         background: "#2D2D2D",

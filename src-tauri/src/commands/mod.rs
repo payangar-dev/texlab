@@ -6,12 +6,14 @@
 pub mod dto;
 pub mod history_commands;
 pub mod layer_commands;
+pub mod layout_commands;
 pub mod state_commands;
 pub mod texture_commands;
 pub mod tool_commands;
 
 pub use history_commands::*;
 pub use layer_commands::*;
+pub use layout_commands::*;
 pub use state_commands::*;
 pub use texture_commands::*;
 pub use tool_commands::*;

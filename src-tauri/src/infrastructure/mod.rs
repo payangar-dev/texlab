@@ -5,3 +5,4 @@
 
 pub mod png_reader;
 pub mod png_writer;
+pub mod workspace_io;

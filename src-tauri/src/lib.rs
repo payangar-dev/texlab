@@ -36,6 +36,8 @@ pub fn run() {
             commands::redo,
             commands::get_editor_state,
             commands::get_composite,
+            commands::save_workspace_layout,
+            commands::load_workspace_layout,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

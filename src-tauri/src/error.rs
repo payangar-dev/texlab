@@ -28,3 +28,9 @@ impl From<image::ImageError> for AppError {
         AppError::Internal(err.to_string())
     }
 }
+
+impl From<std::io::Error> for AppError {
+    fn from(err: std::io::Error) -> Self {
+        AppError::Internal(err.to_string())
+    }
+}
