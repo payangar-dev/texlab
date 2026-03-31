@@ -114,8 +114,19 @@ export function toolPress(
   y: number,
   color: ColorDto,
   brushSize: number,
+  opacity: number,
+  pipetteMode: string,
 ): Promise<ToolResultDto> {
-  return invoke("tool_press", { tool, layerId, x, y, color, brushSize });
+  return invoke("tool_press", {
+    tool,
+    layerId,
+    x,
+    y,
+    color,
+    brushSize,
+    opacity,
+    pipetteMode,
+  });
 }
 
 export function toolDrag(
@@ -124,8 +135,9 @@ export function toolDrag(
   y: number,
   color: ColorDto,
   brushSize: number,
+  opacity: number,
 ): Promise<ToolResultDto> {
-  return invoke("tool_drag", { layerId, x, y, color, brushSize });
+  return invoke("tool_drag", { layerId, x, y, color, brushSize, opacity });
 }
 
 export function toolRelease(
@@ -134,8 +146,9 @@ export function toolRelease(
   y: number,
   color: ColorDto,
   brushSize: number,
+  opacity: number,
 ): Promise<ToolResultDto> {
-  return invoke("tool_release", { layerId, x, y, color, brushSize });
+  return invoke("tool_release", { layerId, x, y, color, brushSize, opacity });
 }
 
 // --- Layer commands ---

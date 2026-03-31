@@ -112,6 +112,12 @@ impl EditorService {
         Ok(())
     }
 
+    /// Composites all visible layers and returns the color at (x, y).
+    pub fn pick_color_composite(&self, x: u32, y: u32) -> Result<Color, DomainError> {
+        let composite = self.texture.composite()?;
+        composite.get_pixel(x, y)
+    }
+
     // -- Tool operations --
 
     #[allow(clippy::too_many_arguments)]
@@ -124,6 +130,7 @@ impl EditorService {
         y: u32,
         color: Color,
         brush_size: BrushSize,
+        opacity: f32,
     ) -> Result<ToolResult, DomainError> {
         let layer = self
             .texture
@@ -133,11 +140,7 @@ impl EditorService {
                 layer_id: layer_id.value(),
             })?;
         let buffer = layer.buffer_mut()?;
-        let mut ctx = ToolContext {
-            buffer,
-            color,
-            brush_size,
-        };
+        let mut ctx = ToolContext::new(buffer, color, brush_size, opacity);
         let result = match phase {
             ToolPhase::Press => tool.on_press(&mut ctx, x, y)?,
             ToolPhase::Drag => tool.on_drag(&mut ctx, x, y)?,
@@ -150,6 +153,7 @@ impl EditorService {
         Ok(result)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn apply_tool_press(
         &mut self,
         tool: &mut dyn Tool,
@@ -158,12 +162,23 @@ impl EditorService {
         y: u32,
         color: Color,
         brush_size: BrushSize,
+        opacity: f32,
     ) -> Result<ToolResult, DomainError> {
         self.pending_snapshot = Some(TextureSnapshot::capture(self.texture.layer_stack()));
         self.pixels_modified_in_cycle = false;
-        self.run_tool(tool, ToolPhase::Press, layer_id, x, y, color, brush_size)
+        self.run_tool(
+            tool,
+            ToolPhase::Press,
+            layer_id,
+            x,
+            y,
+            color,
+            brush_size,
+            opacity,
+        )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn apply_tool_drag(
         &mut self,
         tool: &mut dyn Tool,
@@ -172,10 +187,21 @@ impl EditorService {
         y: u32,
         color: Color,
         brush_size: BrushSize,
+        opacity: f32,
     ) -> Result<ToolResult, DomainError> {
-        self.run_tool(tool, ToolPhase::Drag, layer_id, x, y, color, brush_size)
+        self.run_tool(
+            tool,
+            ToolPhase::Drag,
+            layer_id,
+            x,
+            y,
+            color,
+            brush_size,
+            opacity,
+        )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn apply_tool_release(
         &mut self,
         tool: &mut dyn Tool,
@@ -184,8 +210,18 @@ impl EditorService {
         y: u32,
         color: Color,
         brush_size: BrushSize,
+        opacity: f32,
     ) -> Result<ToolResult, DomainError> {
-        let result = self.run_tool(tool, ToolPhase::Release, layer_id, x, y, color, brush_size)?;
+        let result = self.run_tool(
+            tool,
+            ToolPhase::Release,
+            layer_id,
+            x,
+            y,
+            color,
+            brush_size,
+            opacity,
+        )?;
         if self.pixels_modified_in_cycle {
             if let Some(snapshot) = self.pending_snapshot.take() {
                 self.undo_manager
@@ -342,9 +378,9 @@ mod tests {
         y: u32,
         color: Color,
     ) {
-        svc.apply_tool_press(tool, layer_id, x, y, color, BrushSize::DEFAULT)
+        svc.apply_tool_press(tool, layer_id, x, y, color, BrushSize::DEFAULT, 1.0)
             .unwrap();
-        svc.apply_tool_release(tool, layer_id, x, y, color, BrushSize::DEFAULT)
+        svc.apply_tool_release(tool, layer_id, x, y, color, BrushSize::DEFAULT, 1.0)
             .unwrap();
     }
 
@@ -435,10 +471,26 @@ mod tests {
         let id = LayerId::new(1);
         let mut tool = ColorPickerTool;
 
-        svc.apply_tool_press(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
-            .unwrap();
-        svc.apply_tool_release(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
-            .unwrap();
+        svc.apply_tool_press(
+            &mut tool,
+            id,
+            0,
+            0,
+            Color::TRANSPARENT,
+            BrushSize::DEFAULT,
+            1.0,
+        )
+        .unwrap();
+        svc.apply_tool_release(
+            &mut tool,
+            id,
+            0,
+            0,
+            Color::TRANSPARENT,
+            BrushSize::DEFAULT,
+            1.0,
+        )
+        .unwrap();
 
         assert!(!svc.can_undo());
     }
@@ -449,10 +501,26 @@ mod tests {
         let id = LayerId::new(1);
         let mut tool = SelectionTool::default();
 
-        svc.apply_tool_press(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
-            .unwrap();
-        svc.apply_tool_release(&mut tool, id, 0, 0, Color::TRANSPARENT, BrushSize::DEFAULT)
-            .unwrap();
+        svc.apply_tool_press(
+            &mut tool,
+            id,
+            0,
+            0,
+            Color::TRANSPARENT,
+            BrushSize::DEFAULT,
+            1.0,
+        )
+        .unwrap();
+        svc.apply_tool_release(
+            &mut tool,
+            id,
+            0,
+            0,
+            Color::TRANSPARENT,
+            BrushSize::DEFAULT,
+            1.0,
+        )
+        .unwrap();
 
         assert!(!svc.can_undo());
     }
@@ -488,6 +556,7 @@ mod tests {
             0,
             Color::TRANSPARENT,
             BrushSize::DEFAULT,
+            1.0,
         )
         .unwrap();
         svc.apply_tool_release(
@@ -497,6 +566,7 @@ mod tests {
             0,
             Color::TRANSPARENT,
             BrushSize::DEFAULT,
+            1.0,
         )
         .unwrap();
 
@@ -511,9 +581,9 @@ mod tests {
         let id = LayerId::new(1);
         let mut tool = FillTool;
 
-        svc.apply_tool_press(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+        svc.apply_tool_press(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT, 1.0)
             .unwrap();
-        svc.apply_tool_release(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+        svc.apply_tool_release(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT, 1.0)
             .unwrap();
 
         assert!(svc.can_undo());
@@ -527,9 +597,9 @@ mod tests {
         let id = LayerId::new(1);
         let mut tool = LineTool::default();
 
-        svc.apply_tool_press(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+        svc.apply_tool_press(&mut tool, id, 0, 0, Color::WHITE, BrushSize::DEFAULT, 1.0)
             .unwrap();
-        svc.apply_tool_release(&mut tool, id, 3, 3, Color::WHITE, BrushSize::DEFAULT)
+        svc.apply_tool_release(&mut tool, id, 3, 3, Color::WHITE, BrushSize::DEFAULT, 1.0)
             .unwrap();
 
         assert!(svc.can_undo());
@@ -544,11 +614,11 @@ mod tests {
         let red = Color::new(255, 0, 0, 255);
         let mut tool = BrushTool::default();
 
-        svc.apply_tool_press(&mut tool, id, 0, 0, red, BrushSize::DEFAULT)
+        svc.apply_tool_press(&mut tool, id, 0, 0, red, BrushSize::DEFAULT, 1.0)
             .unwrap();
-        svc.apply_tool_drag(&mut tool, id, 2, 2, red, BrushSize::DEFAULT)
+        svc.apply_tool_drag(&mut tool, id, 2, 2, red, BrushSize::DEFAULT, 1.0)
             .unwrap();
-        svc.apply_tool_release(&mut tool, id, 2, 2, red, BrushSize::DEFAULT)
+        svc.apply_tool_release(&mut tool, id, 2, 2, red, BrushSize::DEFAULT, 1.0)
             .unwrap();
 
         assert!(svc.can_undo());
@@ -564,9 +634,53 @@ mod tests {
         let mut tool = BrushTool::default();
 
         let err = svc
-            .apply_tool_press(&mut tool, missing, 0, 0, Color::WHITE, BrushSize::DEFAULT)
+            .apply_tool_press(
+                &mut tool,
+                missing,
+                0,
+                0,
+                Color::WHITE,
+                BrushSize::DEFAULT,
+                1.0,
+            )
             .unwrap_err();
         assert_eq!(err, DomainError::LayerNotFound { layer_id: 999 });
+    }
+
+    // === Pipette composite sampling ===
+
+    #[test]
+    fn pick_color_composite_returns_blended_color() {
+        let mut tex = test_texture();
+        let id1 = LayerId::new(1);
+        let id2 = LayerId::new(2);
+        tex.add_layer(id1, "bottom".to_string()).unwrap();
+        tex.add_layer(id2, "top".to_string()).unwrap();
+
+        let mut svc = EditorService::new(tex);
+
+        // Paint red on bottom layer
+        let red = Color::new(255, 0, 0, 255);
+        let mut tool = BrushTool::default();
+        brush_stroke(&mut svc, &mut tool, id1, 0, 0, red);
+
+        // Paint green on top layer
+        let green = Color::new(0, 255, 0, 255);
+        brush_stroke(&mut svc, &mut tool, id2, 0, 0, green);
+
+        // Composite should show the top layer color (fully opaque green over red)
+        let picked = svc.pick_color_composite(0, 0).unwrap();
+        assert_eq!(
+            picked, green,
+            "composite should return top layer color when fully opaque"
+        );
+    }
+
+    #[test]
+    fn pick_color_composite_out_of_bounds_returns_error() {
+        let svc = test_service();
+        let result = svc.pick_color_composite(100, 100);
+        assert!(result.is_err(), "out of bounds should return error");
     }
 
     // === US2: Redo a Reverted Action (T015) ===

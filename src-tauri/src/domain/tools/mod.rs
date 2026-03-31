@@ -10,7 +10,7 @@ use super::error::DomainError;
 use super::pixel_buffer::PixelBuffer;
 use super::selection::Selection;
 
-/// Validated brush size (1..=16). Invalid values are unrepresentable.
+/// Validated brush size (1..=32). Invalid values are unrepresentable.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BrushSize(u8);
 
@@ -18,7 +18,7 @@ impl BrushSize {
     pub const DEFAULT: Self = Self(1);
 
     pub fn new(size: u8) -> Result<Self, DomainError> {
-        if !(1..=16).contains(&size) {
+        if !(1..=32).contains(&size) {
             return Err(DomainError::InvalidBrushSize { size });
         }
         Ok(Self(size))
@@ -34,6 +34,24 @@ pub struct ToolContext<'a> {
     pub buffer: &'a mut PixelBuffer,
     pub color: Color,
     pub brush_size: BrushSize,
+    pub opacity: f32,
+}
+
+impl<'a> ToolContext<'a> {
+    /// Creates a new ToolContext, clamping opacity to [0.0, 1.0].
+    pub fn new(
+        buffer: &'a mut PixelBuffer,
+        color: Color,
+        brush_size: BrushSize,
+        opacity: f32,
+    ) -> Self {
+        Self {
+            buffer,
+            color,
+            brush_size,
+            opacity: opacity.clamp(0.0, 1.0),
+        }
+    }
 }
 
 /// Outcome of a tool operation.
@@ -96,6 +114,63 @@ pub fn bresenham_line(x0: i32, y0: i32, x1: i32, y1: i32) -> Vec<(i32, i32)> {
     points
 }
 
+/// Per-pixel alpha blending: mixes `brush` over `existing` using `opacity` (0.0–1.0).
+pub fn blend_with_opacity(existing: Color, brush: Color, opacity: f32) -> Color {
+    let er = existing.r() as f32;
+    let eg = existing.g() as f32;
+    let eb = existing.b() as f32;
+    let ea = existing.a() as f32;
+
+    let br = brush.r() as f32;
+    let bg = brush.g() as f32;
+    let bb = brush.b() as f32;
+    let ba = brush.a() as f32;
+
+    let r = (er * (1.0 - opacity) + br * opacity).round() as u8;
+    let g = (eg * (1.0 - opacity) + bg * opacity).round() as u8;
+    let b = (eb * (1.0 - opacity) + bb * opacity).round() as u8;
+    let a = (ea + (ba - ea) * opacity).round() as u8;
+
+    Color::new(r, g, b, a)
+}
+
+/// Stamps a `brush_size × brush_size` rectangle centered on (x, y) with opacity blending.
+/// Returns `true` if at least one pixel was modified.
+pub fn stamp_rect(ctx: &mut ToolContext, x: u32, y: u32) -> bool {
+    let size = ctx.brush_size.value() as u32;
+    let half = size / 2;
+    let sx = x.saturating_sub(half);
+    let sy = y.saturating_sub(half);
+    if ctx.opacity >= 1.0 {
+        ctx.buffer.fill_rect(sx, sy, size, size, ctx.color);
+        let w = ctx.buffer.width();
+        let h = ctx.buffer.height();
+        sx < w && sy < h
+    } else if ctx.opacity > 0.0 {
+        let w = ctx.buffer.width();
+        let h = ctx.buffer.height();
+        let opacity = ctx.opacity;
+        let color = ctx.color;
+        let mut modified = false;
+        for dy in 0..size {
+            for dx in 0..size {
+                let px = sx + dx;
+                let py = sy + dy;
+                if px < w && py < h {
+                    if let Ok(existing) = ctx.buffer.get_pixel(px, py) {
+                        let blended = blend_with_opacity(existing, color, opacity);
+                        let _ = ctx.buffer.set_pixel(px, py, blended);
+                        modified = true;
+                    }
+                }
+            }
+        }
+        modified
+    } else {
+        false
+    }
+}
+
 pub use brush::BrushTool;
 pub use color_picker::ColorPickerTool;
 pub use eraser::EraserTool;
@@ -116,6 +191,12 @@ mod tests {
 
     #[test]
     fn brush_size_valid_max() {
+        let bs = BrushSize::new(32).unwrap();
+        assert_eq!(bs.value(), 32);
+    }
+
+    #[test]
+    fn brush_size_valid_16() {
         let bs = BrushSize::new(16).unwrap();
         assert_eq!(bs.value(), 16);
     }
@@ -128,8 +209,8 @@ mod tests {
 
     #[test]
     fn brush_size_invalid_too_large() {
-        let err = BrushSize::new(17).unwrap_err();
-        assert_eq!(err, DomainError::InvalidBrushSize { size: 17 });
+        let err = BrushSize::new(33).unwrap_err();
+        assert_eq!(err, DomainError::InvalidBrushSize { size: 33 });
     }
 
     #[test]

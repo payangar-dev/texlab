@@ -1,15 +1,8 @@
-use super::{BrushSize, DomainError, Tool, ToolContext, ToolResult};
+use super::{stamp_rect, DomainError, Tool, ToolContext, ToolResult};
 
 #[derive(Default)]
 pub struct BrushTool {
     last_pos: Option<(u32, u32)>,
-}
-
-impl BrushTool {
-    fn stamp(&self, ctx: &mut ToolContext, x: u32, y: u32) {
-        let size = ctx.brush_size.value() as u32;
-        ctx.buffer.fill_rect(x, y, size, size, ctx.color);
-    }
 }
 
 impl Tool for BrushTool {
@@ -23,7 +16,7 @@ impl Tool for BrushTool {
         x: u32,
         y: u32,
     ) -> Result<ToolResult, DomainError> {
-        self.stamp(ctx, x, y);
+        stamp_rect(ctx, x, y);
         self.last_pos = Some((x, y));
         Ok(ToolResult::PixelsModified)
     }
@@ -37,7 +30,7 @@ impl Tool for BrushTool {
         let (x0, y0) = match self.last_pos {
             Some(pos) => pos,
             None => {
-                self.stamp(ctx, x, y);
+                stamp_rect(ctx, x, y);
                 self.last_pos = Some((x, y));
                 return Ok(ToolResult::PixelsModified);
             }
@@ -46,7 +39,7 @@ impl Tool for BrushTool {
         let points = super::bresenham_line(x0 as i32, y0 as i32, x as i32, y as i32);
         for (px, py) in points {
             if px >= 0 && py >= 0 {
-                self.stamp(ctx, px as u32, py as u32);
+                stamp_rect(ctx, px as u32, py as u32);
             }
         }
 
@@ -75,11 +68,16 @@ mod tests {
     use super::*;
 
     fn make_ctx(buf: &mut PixelBuffer, color: Color, size: u8) -> ToolContext<'_> {
-        ToolContext {
-            buffer: buf,
-            color,
-            brush_size: BrushSize::new(size).unwrap(),
-        }
+        ToolContext::new(buf, color, BrushSize::new(size).unwrap(), 1.0)
+    }
+
+    fn make_ctx_opacity(
+        buf: &mut PixelBuffer,
+        color: Color,
+        size: u8,
+        opacity: f32,
+    ) -> ToolContext<'_> {
+        ToolContext::new(buf, color, BrushSize::new(size).unwrap(), opacity)
     }
 
     #[test]
@@ -128,19 +126,19 @@ mod tests {
         let color = Color::new(0, 0, 255, 255);
         let mut tool = BrushTool::default();
 
+        // Press at (3,3) with size=2: half=1, stamp from (2,2) to (3,3)
         tool.on_press(&mut make_ctx(&mut buf, color, 2), 3, 3)
             .unwrap();
 
-        // 2x2 square at top-left (3,3): covers (3,3), (4,3), (3,4), (4,4)
+        assert_eq!(buf.get_pixel(2, 2).unwrap(), color);
+        assert_eq!(buf.get_pixel(3, 2).unwrap(), color);
+        assert_eq!(buf.get_pixel(2, 3).unwrap(), color);
         assert_eq!(buf.get_pixel(3, 3).unwrap(), color);
-        assert_eq!(buf.get_pixel(4, 3).unwrap(), color);
-        assert_eq!(buf.get_pixel(3, 4).unwrap(), color);
-        assert_eq!(buf.get_pixel(4, 4).unwrap(), color);
         // Outside the stamp
-        assert_eq!(buf.get_pixel(2, 3).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(5, 3).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(3, 2).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(3, 5).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(1, 2).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(4, 2).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(2, 1).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(2, 4).unwrap(), Color::TRANSPARENT);
     }
 
     #[test]
@@ -149,19 +147,19 @@ mod tests {
         let color = Color::new(128, 64, 32, 255);
         let mut tool = BrushTool::default();
 
+        // Press at (5,5) with size=4: half=2, stamp from (3,3) to (6,6)
         tool.on_press(&mut make_ctx(&mut buf, color, 4), 5, 5)
             .unwrap();
 
-        // 4x4 square at top-left (5,5): corners are (5,5), (8,5), (5,8), (8,8)
-        assert_eq!(buf.get_pixel(5, 5).unwrap(), color, "top-left corner");
-        assert_eq!(buf.get_pixel(8, 5).unwrap(), color, "top-right corner");
-        assert_eq!(buf.get_pixel(5, 8).unwrap(), color, "bottom-left corner");
-        assert_eq!(buf.get_pixel(8, 8).unwrap(), color, "bottom-right corner");
+        assert_eq!(buf.get_pixel(3, 3).unwrap(), color, "top-left corner");
+        assert_eq!(buf.get_pixel(6, 3).unwrap(), color, "top-right corner");
+        assert_eq!(buf.get_pixel(3, 6).unwrap(), color, "bottom-left corner");
+        assert_eq!(buf.get_pixel(6, 6).unwrap(), color, "bottom-right corner");
         // Just outside
-        assert_eq!(buf.get_pixel(4, 5).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(9, 5).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(5, 4).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(5, 9).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(2, 3).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(7, 3).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(3, 2).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(3, 7).unwrap(), Color::TRANSPARENT);
     }
 
     #[test]
@@ -213,6 +211,45 @@ mod tests {
                 "gap between ({px},{py}) and ({cx},{cy})"
             );
         }
+    }
+
+    #[test]
+    fn opacity_full_overwrites() {
+        let mut buf = PixelBuffer::new(10, 10).unwrap();
+        buf.set_pixel(2, 3, Color::new(0, 255, 0, 255)).unwrap();
+        let color = Color::new(255, 0, 0, 255);
+        let mut tool = BrushTool::default();
+        tool.on_press(&mut make_ctx_opacity(&mut buf, color, 1, 1.0), 2, 3)
+            .unwrap();
+        assert_eq!(buf.get_pixel(2, 3).unwrap(), color);
+    }
+
+    #[test]
+    fn opacity_half_blends() {
+        let mut buf = PixelBuffer::new(10, 10).unwrap();
+        buf.set_pixel(2, 3, Color::new(0, 0, 0, 255)).unwrap();
+        let brush_color = Color::new(255, 0, 0, 255);
+        let mut tool = BrushTool::default();
+        tool.on_press(&mut make_ctx_opacity(&mut buf, brush_color, 1, 0.5), 2, 3)
+            .unwrap();
+        let result = buf.get_pixel(2, 3).unwrap();
+        // 0 * 0.5 + 255 * 0.5 = 128 (rounded)
+        assert_eq!(result.r(), 128);
+        assert_eq!(result.g(), 0);
+        assert_eq!(result.b(), 0);
+        assert_eq!(result.a(), 255);
+    }
+
+    #[test]
+    fn opacity_zero_noop() {
+        let mut buf = PixelBuffer::new(10, 10).unwrap();
+        let original = Color::new(0, 255, 0, 255);
+        buf.set_pixel(2, 3, original).unwrap();
+        let brush_color = Color::new(255, 0, 0, 255);
+        let mut tool = BrushTool::default();
+        tool.on_press(&mut make_ctx_opacity(&mut buf, brush_color, 1, 0.0), 2, 3)
+            .unwrap();
+        assert_eq!(buf.get_pixel(2, 3).unwrap(), original);
     }
 
     #[test]

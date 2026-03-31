@@ -9,7 +9,10 @@ pub struct EraserTool {
 impl EraserTool {
     fn stamp(&self, ctx: &mut ToolContext, x: u32, y: u32) {
         let size = ctx.brush_size.value() as u32;
-        ctx.buffer.fill_rect(x, y, size, size, Color::TRANSPARENT);
+        let half = size / 2;
+        let sx = x.saturating_sub(half);
+        let sy = y.saturating_sub(half);
+        ctx.buffer.fill_rect(sx, sy, size, size, Color::TRANSPARENT);
     }
 }
 
@@ -75,19 +78,16 @@ mod tests {
     use crate::domain::pixel_buffer::PixelBuffer;
 
     fn make_ctx(buf: &mut PixelBuffer) -> ToolContext<'_> {
-        ToolContext {
-            buffer: buf,
-            color: Color::new(255, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        }
+        ToolContext::new(buf, Color::new(255, 0, 0, 255), BrushSize::DEFAULT, 1.0)
     }
 
     fn make_ctx_with_size(buf: &mut PixelBuffer, size: u8) -> ToolContext<'_> {
-        ToolContext {
-            buffer: buf,
-            color: Color::new(255, 0, 0, 255),
-            brush_size: BrushSize::new(size).unwrap(),
-        }
+        ToolContext::new(
+            buf,
+            Color::new(255, 0, 0, 255),
+            BrushSize::new(size).unwrap(),
+            1.0,
+        )
     }
 
     #[test]
@@ -121,17 +121,17 @@ mod tests {
 
         let mut eraser = EraserTool::default();
         let mut ctx = make_ctx_with_size(&mut buf, 2);
+        // Press at (2,2) with size=2: half=1, stamp from (1,1) to (2,2)
         eraser.on_press(&mut ctx, 2, 2).unwrap();
 
-        // The 2×2 square at (2,2) should be transparent
+        assert_eq!(buf.get_pixel(1, 1).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(2, 1).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(1, 2).unwrap(), Color::TRANSPARENT);
         assert_eq!(buf.get_pixel(2, 2).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(3, 2).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(2, 3).unwrap(), Color::TRANSPARENT);
-        assert_eq!(buf.get_pixel(3, 3).unwrap(), Color::TRANSPARENT);
 
         // Pixels outside the erased square remain red
-        assert_eq!(buf.get_pixel(1, 1).unwrap(), Color::new(255, 0, 0, 255));
-        assert_eq!(buf.get_pixel(4, 4).unwrap(), Color::new(255, 0, 0, 255));
+        assert_eq!(buf.get_pixel(0, 0).unwrap(), Color::new(255, 0, 0, 255));
+        assert_eq!(buf.get_pixel(3, 3).unwrap(), Color::new(255, 0, 0, 255));
     }
 
     #[test]
@@ -264,11 +264,12 @@ mod tests {
 
         let mut eraser = EraserTool::default();
         // Use a blue context color — the eraser must ignore it
-        let mut ctx = ToolContext {
-            buffer: &mut buf,
-            color: Color::new(0, 0, 255, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
+        let mut ctx = ToolContext::new(
+            &mut buf,
+            Color::new(0, 0, 255, 255),
+            BrushSize::DEFAULT,
+            1.0,
+        );
         eraser.on_press(&mut ctx, 3, 3).unwrap();
 
         // Pixel must be TRANSPARENT, not blue
