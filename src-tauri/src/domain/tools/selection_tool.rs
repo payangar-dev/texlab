@@ -73,11 +73,7 @@ mod tests {
     fn drag_creates_normalized_selection() {
         let mut tool = SelectionTool::default();
         let mut buf = make_ctx(16, 16);
-        let mut ctx = ToolContext {
-            buffer: &mut buf,
-            color: Color::new(0, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
+        let mut ctx = ToolContext::new(&mut buf, Color::new(0, 0, 0, 255), BrushSize::DEFAULT, 1.0);
 
         tool.on_press(&mut ctx, 2, 3).unwrap();
         let result = tool.on_drag(&mut ctx, 8, 7).unwrap();
@@ -94,11 +90,7 @@ mod tests {
     fn click_without_drag_clears() {
         let mut tool = SelectionTool::default();
         let mut buf = make_ctx(16, 16);
-        let mut ctx = ToolContext {
-            buffer: &mut buf,
-            color: Color::new(0, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
+        let mut ctx = ToolContext::new(&mut buf, Color::new(0, 0, 0, 255), BrushSize::DEFAULT, 1.0);
 
         tool.on_press(&mut ctx, 5, 5).unwrap();
         let result = tool.on_release(&mut ctx, 5, 5).unwrap();
@@ -110,11 +102,7 @@ mod tests {
     fn selection_clipped_to_canvas() {
         let mut tool = SelectionTool::default();
         let mut buf = make_ctx(8, 8);
-        let mut ctx = ToolContext {
-            buffer: &mut buf,
-            color: Color::new(0, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
+        let mut ctx = ToolContext::new(&mut buf, Color::new(0, 0, 0, 255), BrushSize::DEFAULT, 1.0);
 
         tool.on_press(&mut ctx, 0, 0).unwrap();
         let result = tool.on_drag(&mut ctx, 20, 20).unwrap();
@@ -131,11 +119,7 @@ mod tests {
     fn on_drag_without_press_returns_noop() {
         let mut tool = SelectionTool::default();
         let mut buf = make_ctx(16, 16);
-        let mut ctx = ToolContext {
-            buffer: &mut buf,
-            color: Color::new(0, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
+        let mut ctx = ToolContext::new(&mut buf, Color::new(0, 0, 0, 255), BrushSize::DEFAULT, 1.0);
 
         let result = tool.on_drag(&mut ctx, 4, 4).unwrap();
 
@@ -146,11 +130,7 @@ mod tests {
     fn on_release_without_press_returns_noop() {
         let mut tool = SelectionTool::default();
         let mut buf = make_ctx(16, 16);
-        let mut ctx = ToolContext {
-            buffer: &mut buf,
-            color: Color::new(0, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
+        let mut ctx = ToolContext::new(&mut buf, Color::new(0, 0, 0, 255), BrushSize::DEFAULT, 1.0);
 
         let result = tool.on_release(&mut ctx, 4, 4).unwrap();
 
@@ -164,16 +144,18 @@ mod tests {
         let mut buf_fwd = make_ctx(16, 16);
         let mut buf_rev = make_ctx(16, 16);
 
-        let mut ctx_fwd = ToolContext {
-            buffer: &mut buf_fwd,
-            color: Color::new(0, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
-        let mut ctx_rev = ToolContext {
-            buffer: &mut buf_rev,
-            color: Color::new(0, 0, 0, 255),
-            brush_size: BrushSize::DEFAULT,
-        };
+        let mut ctx_fwd = ToolContext::new(
+            &mut buf_fwd,
+            Color::new(0, 0, 0, 255),
+            BrushSize::DEFAULT,
+            1.0,
+        );
+        let mut ctx_rev = ToolContext::new(
+            &mut buf_rev,
+            Color::new(0, 0, 0, 255),
+            BrushSize::DEFAULT,
+            1.0,
+        );
 
         tool_fwd.on_press(&mut ctx_fwd, 2, 3).unwrap();
         let fwd = tool_fwd.on_drag(&mut ctx_fwd, 8, 7).unwrap();

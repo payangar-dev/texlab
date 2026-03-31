@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useViewportStore } from "../../store/viewportStore";
 import { CHECKERBOARD_COLOR_A, CHECKERBOARD_COLOR_B, GRID_THRESHOLD } from "./constants";
-import { gridOpacity } from "./math";
+import { bresenhamLine, gridOpacity } from "./math";
 
 export interface CanvasRendererApi {
   updateComposite: (data: Uint8ClampedArray, width: number, height: number) => void;
@@ -10,6 +10,10 @@ export interface CanvasRendererApi {
   cursorPixelRef: React.RefObject<{ x: number; y: number } | null>;
   /** Ref to current brush size for overlay drawing. */
   brushSizeRef: React.RefObject<number>;
+  /** Ref to line tool preview start point. Set on line tool press, cleared on release. */
+  linePreviewRef: React.RefObject<{ startX: number; startY: number } | null>;
+  /** Ref to brush preview size override (e.g., 1 for fill/eyedropper). 0 = no preview. */
+  brushPreviewSizeRef: React.RefObject<number>;
 }
 
 export function useCanvasRenderer(
@@ -23,6 +27,8 @@ export function useCanvasRenderer(
   const textureSizeRef = useRef({ width: 0, height: 0 });
   const cursorPixelRef = useRef<{ x: number; y: number } | null>(null);
   const brushSizeRef = useRef(1);
+  const linePreviewRef = useRef<{ startX: number; startY: number } | null>(null);
+  const brushPreviewSizeRef = useRef(1);
 
   // Create checkerboard pattern once
   const getCheckerboardPattern = useCallback(
@@ -159,25 +165,48 @@ export function useCanvasRenderer(
         ctx.stroke();
       }
 
-      // Cursor preview overlay
+      // Brush preview overlay (pixel-snapped rectangle showing affected area)
       const cursor = cursorPixelRef.current;
-      if (cursor) {
-        const brushSize = brushSizeRef.current;
-        const halfBrush = Math.floor(brushSize / 2);
-        const px = cursor.x - halfBrush;
-        const py = cursor.y - halfBrush;
+      const previewSize = brushPreviewSizeRef.current;
 
+      if (cursor && previewSize > 0) {
         ctx.resetTransform();
-        const rx = Math.round((panX + px * zoom) * dpr);
-        const ry = Math.round((panY + py * zoom) * dpr);
-        const rw = Math.round(brushSize * zoom * dpr);
-        const rh = Math.round(brushSize * zoom * dpr);
+        const rx = Math.round((panX + (cursor.x + 0.5 - previewSize / 2) * zoom) * dpr);
+        const ry = Math.round((panY + (cursor.y + 0.5 - previewSize / 2) * zoom) * dpr);
+        const rw = Math.round(previewSize * zoom * dpr);
+        const rh = Math.round(previewSize * zoom * dpr);
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
         ctx.fillRect(rx, ry, rw, rh);
         ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
         ctx.lineWidth = 1;
         ctx.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
+      }
+
+      // Line tool preview overlay
+      if (cursor) {
+        const lineStart = linePreviewRef.current;
+        if (lineStart) {
+          const brushSize = brushSizeRef.current;
+          const halfF = brushSize / 2;
+          const points = bresenhamLine(
+            lineStart.startX,
+            lineStart.startY,
+            cursor.x,
+            cursor.y,
+          );
+
+          ctx.resetTransform();
+          ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+
+          for (const pt of points) {
+            const lx = Math.round((panX + (pt.x + 0.5 - halfF) * zoom) * dpr);
+            const ly = Math.round((panY + (pt.y + 0.5 - halfF) * zoom) * dpr);
+            const lw = Math.round(brushSize * zoom * dpr);
+            const lh = Math.round(brushSize * zoom * dpr);
+            ctx.fillRect(lx, ly, lw, lh);
+          }
+        }
       }
     };
 
@@ -193,5 +222,12 @@ export function useCanvasRenderer(
     return unsub;
   }, []);
 
-  return { updateComposite, requestRedraw, cursorPixelRef, brushSizeRef };
+  return {
+    updateComposite,
+    requestRedraw,
+    cursorPixelRef,
+    brushSizeRef,
+    linePreviewRef,
+    brushPreviewSizeRef,
+  };
 }

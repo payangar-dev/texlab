@@ -16,7 +16,7 @@ fn create_tool(name: &str) -> Result<Box<dyn Tool + Send>, AppError> {
         "brush" => Ok(Box::new(BrushTool::default())),
         "eraser" => Ok(Box::new(EraserTool::default())),
         "fill" => Ok(Box::<FillTool>::default()),
-        "color_picker" => Ok(Box::<ColorPickerTool>::default()),
+        "color_picker" | "eyedropper" => Ok(Box::<ColorPickerTool>::default()),
         "line" => Ok(Box::new(LineTool::default())),
         "selection" => Ok(Box::new(SelectionTool::default())),
         _ => Err(AppError::Internal(format!("unknown tool: {name}"))),
@@ -34,6 +34,8 @@ pub fn tool_press(
     y: u32,
     color: ColorDto,
     brush_size: u8,
+    opacity: f32,
+    pipette_mode: String,
 ) -> Result<ToolResultDto, AppError> {
     let parsed_layer_id = parse_layer_id(&layer_id)?;
     let brush = BrushSize::new(brush_size)?;
@@ -47,6 +49,23 @@ pub fn tool_press(
     state.active_layer_id = Some(parsed_layer_id);
 
     let editor = state.editor_mut()?;
+
+    // Pipette mode handling
+    let is_pipette = tool == "color_picker" || tool == "eyedropper";
+    if is_pipette {
+        if pipette_mode != "composite" && pipette_mode != "active_layer" {
+            return Err(AppError::Internal(format!(
+                "unknown pipette mode: {pipette_mode}"
+            )));
+        }
+        if pipette_mode == "composite" {
+            let picked = editor.pick_color_composite(x, y)?;
+            let result = ToolResult::ColorPicked(picked);
+            state.active_tool = Some(tool_instance);
+            return Ok(tool_result_to_dto(result, None));
+        }
+    }
+
     let result = editor.apply_tool_press(
         &mut *tool_instance,
         parsed_layer_id,
@@ -54,6 +73,7 @@ pub fn tool_press(
         y,
         domain_color,
         brush,
+        opacity,
     )?;
 
     let composite = if result == ToolResult::PixelsModified {
@@ -71,14 +91,16 @@ pub fn tool_press(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn tool_drag(
-    app: AppHandle,
+    _app: AppHandle,
     state: State<'_, Mutex<AppState>>,
     layer_id: String,
     x: u32,
     y: u32,
     color: ColorDto,
     brush_size: u8,
+    opacity: f32,
 ) -> Result<ToolResultDto, AppError> {
     let parsed_layer_id = parse_layer_id(&layer_id)?;
     let brush = BrushSize::new(brush_size)?;
@@ -102,6 +124,7 @@ pub fn tool_drag(
             y,
             domain_color,
             brush,
+            opacity,
         )
     };
 
@@ -109,9 +132,11 @@ pub fn tool_drag(
     state.active_tool = Some(tool_instance);
     let result = result?;
 
+    // No emit_state_changed during drag — the composite is returned directly
+    // in the result. Emitting here would trigger a secondary getEditorState IPC
+    // call on every pointermove, flooding the IPC bridge.
     let composite = if result == ToolResult::PixelsModified {
         let editor = state.editor_ref()?;
-        emit_state_changed(&app);
         Some(editor.texture().composite()?)
     } else {
         None
@@ -121,6 +146,7 @@ pub fn tool_drag(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn tool_release(
     app: AppHandle,
     state: State<'_, Mutex<AppState>>,
@@ -129,6 +155,7 @@ pub fn tool_release(
     y: u32,
     color: ColorDto,
     brush_size: u8,
+    opacity: f32,
 ) -> Result<ToolResultDto, AppError> {
     let parsed_layer_id = parse_layer_id(&layer_id)?;
     let brush = BrushSize::new(brush_size)?;
@@ -151,6 +178,7 @@ pub fn tool_release(
         y,
         domain_color,
         brush,
+        opacity,
     )?;
 
     // Stroke complete — tool intentionally dropped

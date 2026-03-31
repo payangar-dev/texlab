@@ -4,7 +4,7 @@ export const ZOOM_LEVELS: readonly number[] = [
 ];
 
 /** Minimum zoom at which the pixel grid becomes visible. */
-export const GRID_THRESHOLD = 4;
+export const GRID_THRESHOLD = 16;
 
 /** Maximum opacity for the pixel grid at high zoom. */
 export const GRID_MAX_OPACITY = 0.5;

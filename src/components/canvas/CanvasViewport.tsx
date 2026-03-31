@@ -5,13 +5,25 @@ import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useResizeObserver } from "../../hooks/useResizeObserver";
 import { useEditorStore } from "../../store/editorStore";
 import { useViewportStore } from "../../store/viewportStore";
+import { ToolOptionsBar } from "../shell/ToolOptionsBar";
 import { useCanvasRenderer } from "./useCanvasRenderer";
 import { useViewportControls } from "./useViewportControls";
 
 /** Callback subscribers for cursor pixel updates (used by StatusBar). */
 export type CursorListener = (pixel: { x: number; y: number } | null) => void;
 
-let cursorListeners = new Set<CursorListener>();
+const cursorListeners = new Set<CursorListener>();
+
+/** Module-level ref for mid-stroke finalization (used by ToolsSidebar and keyboard shortcuts). */
+let finalizeStrokeCallback: (() => void) | null = null;
+
+export function setFinalizeStrokeCallback(cb: (() => void) | null): void {
+  finalizeStrokeCallback = cb;
+}
+
+export function finalizeActiveStroke(): void {
+  finalizeStrokeCallback?.();
+}
 
 export function subscribeToCursor(listener: CursorListener): () => void {
   cursorListeners.add(listener);
@@ -32,16 +44,14 @@ const CanvasViewport = memo(function CanvasViewport(_props?: Record<string, unkn
   useResizeObserver(containerRef);
   const renderer = useCanvasRenderer(canvasRef);
   const { updateComposite, requestRedraw } = renderer;
-  const { spaceHeldRef } = useViewportControls(canvasRef, renderer);
+  const { spaceHeldRef, finalizeStroke } = useViewportControls(canvasRef, renderer);
   useKeyboardShortcuts(spaceHeldRef, requestRedraw);
 
-  // Reset cursor listeners on mount/unmount to avoid stale singleton refs
+  // Register finalizeStroke for external callers
   useEffect(() => {
-    cursorListeners = new Set();
-    return () => {
-      cursorListeners = new Set();
-    };
-  }, []);
+    setFinalizeStrokeCallback(finalizeStroke);
+    return () => setFinalizeStrokeCallback(null);
+  }, [finalizeStroke]);
 
   const fetchAndApplyComposite = useCallback(async () => {
     try {
@@ -70,56 +80,80 @@ const CanvasViewport = memo(function CanvasViewport(_props?: Record<string, unkn
     };
   }, [texture, fetchAndApplyComposite]);
 
-  // Fit to viewport on initial texture load
+  // Fit to viewport on initial texture load (only when going from null → loaded)
+  const prevTextureRef = useRef<boolean>(false);
   useEffect(() => {
-    if (!texture) return;
-    const { containerWidth, containerHeight } = useViewportStore.getState();
-    if (containerWidth > 0 && containerHeight > 0) {
-      useViewportStore.getState().fitToViewport(texture.width, texture.height);
-      requestRedraw();
+    const hasTexture = texture !== null;
+    if (hasTexture && !prevTextureRef.current) {
+      const { containerWidth, containerHeight } = useViewportStore.getState();
+      if (containerWidth > 0 && containerHeight > 0) {
+        useViewportStore.getState().fitToViewport(texture.width, texture.height);
+        requestRedraw();
+      }
     }
+    prevTextureRef.current = hasTexture;
   }, [texture, requestRedraw]);
 
   // Empty state
   if (!texture) {
     return (
       <div
-        ref={containerRef}
         style={{
           width: "100%",
           height: "100%",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#2D2D2D",
+          flexDirection: "column",
           overflow: "hidden",
         }}
       >
-        <span style={{ color: "#666", fontSize: 14, userSelect: "none" }}>
-          No texture loaded
-        </span>
+        <ToolOptionsBar />
+        <div
+          ref={containerRef}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#2D2D2D",
+            overflow: "hidden",
+          }}
+        >
+          <span style={{ color: "#666", fontSize: 14, userSelect: "none" }}>
+            No texture loaded
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      ref={containerRef}
       style={{
         width: "100%",
         height: "100%",
+        display: "flex",
+        flexDirection: "column",
         overflow: "hidden",
-        position: "relative",
-        background: "#2D2D2D",
       }}
     >
-      <canvas
-        ref={canvasRef}
+      <ToolOptionsBar />
+      <div
+        ref={containerRef}
         style={{
-          display: "block",
-          imageRendering: "pixelated",
+          flex: 1,
+          overflow: "hidden",
+          position: "relative",
+          background: "#2D2D2D",
         }}
-      />
+      >
+        <canvas
+          ref={canvasRef}
+          style={{
+            display: "block",
+            imageRendering: "pixelated",
+          }}
+        />
+      </div>
     </div>
   );
 });

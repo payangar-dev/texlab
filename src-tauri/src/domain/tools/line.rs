@@ -1,4 +1,4 @@
-use super::{DomainError, Tool, ToolContext, ToolResult};
+use super::{stamp_rect, DomainError, Tool, ToolContext, ToolResult};
 
 #[derive(Default)]
 pub struct LineTool {
@@ -41,17 +41,19 @@ impl Tool for LineTool {
         };
 
         let points = super::bresenham_line(start.0 as i32, start.1 as i32, x as i32, y as i32);
+        let mut modified = false;
+
         for (px, py) in points {
-            if px >= 0
-                && py >= 0
-                && (px as u32) < ctx.buffer.width()
-                && (py as u32) < ctx.buffer.height()
-            {
-                ctx.buffer.set_pixel(px as u32, py as u32, ctx.color)?;
+            if px >= 0 && py >= 0 {
+                modified |= stamp_rect(ctx, px as u32, py as u32);
             }
         }
 
-        Ok(ToolResult::PixelsModified)
+        if modified {
+            Ok(ToolResult::PixelsModified)
+        } else {
+            Ok(ToolResult::NoOp)
+        }
     }
 }
 
@@ -65,11 +67,15 @@ mod tests {
     use super::*;
 
     fn make_ctx(buf: &mut PixelBuffer, color: Color) -> ToolContext<'_> {
-        ToolContext {
-            buffer: buf,
-            color,
-            brush_size: BrushSize::DEFAULT,
-        }
+        ToolContext::new(buf, color, BrushSize::DEFAULT, 1.0)
+    }
+
+    fn make_ctx_sized(buf: &mut PixelBuffer, color: Color, size: u8) -> ToolContext<'_> {
+        ToolContext::new(buf, color, BrushSize::new(size).unwrap(), 1.0)
+    }
+
+    fn make_ctx_opacity(buf: &mut PixelBuffer, color: Color, opacity: f32) -> ToolContext<'_> {
+        ToolContext::new(buf, color, BrushSize::DEFAULT, opacity)
     }
 
     #[test]
@@ -223,6 +229,82 @@ mod tests {
         let result = tool.on_drag(&mut make_ctx(&mut buf, color), 5, 5).unwrap();
 
         assert_eq!(result, ToolResult::NoOp);
+    }
+
+    #[test]
+    fn line_with_brush_size_3_wider() {
+        let mut buf = PixelBuffer::new(16, 16).unwrap();
+        let color = Color::new(255, 0, 0, 255);
+        let mut tool = LineTool::default();
+
+        tool.on_press(&mut make_ctx_sized(&mut buf, color, 3), 2, 5)
+            .unwrap();
+        tool.on_release(&mut make_ctx_sized(&mut buf, color, 3), 7, 5)
+            .unwrap();
+
+        // With brush_size=3, half=1. Each Bresenham point at (px, py) stamps
+        // a 3x3 square centered on it: (px-1..px+1, py-1..py+1).
+        // Horizontal line from (2,5) to (7,5): 6 Bresenham points.
+        // Stamp covers x: (2-1)=1 to (7+1)=8, y: (5-1)=4 to (5+1)=6
+        for x in 1..=8u32 {
+            for y in 4..=6u32 {
+                assert_eq!(
+                    buf.get_pixel(x, y).unwrap(),
+                    color,
+                    "pixel ({x},{y}) should be painted"
+                );
+            }
+        }
+        // Row y=3 should be untouched
+        for x in 0..16u32 {
+            assert_eq!(
+                buf.get_pixel(x, 3).unwrap(),
+                Color::TRANSPARENT,
+                "pixel ({x},3) above the line should be transparent"
+            );
+        }
+    }
+
+    #[test]
+    fn line_opacity_half_blends() {
+        let mut buf = PixelBuffer::new(16, 16).unwrap();
+        // Pre-fill row y=5 with black
+        for x in 0..16u32 {
+            buf.set_pixel(x, 5, Color::new(0, 0, 0, 255)).unwrap();
+        }
+        let color = Color::new(255, 0, 0, 255);
+        let mut tool = LineTool::default();
+
+        tool.on_press(&mut make_ctx_opacity(&mut buf, color, 0.5), 0, 5)
+            .unwrap();
+        let result = tool
+            .on_release(&mut make_ctx_opacity(&mut buf, color, 0.5), 5, 5)
+            .unwrap();
+
+        assert_eq!(result, ToolResult::PixelsModified);
+        let pixel = buf.get_pixel(0, 5).unwrap();
+        // 0 * 0.5 + 255 * 0.5 = 128
+        assert_eq!(pixel.r(), 128);
+        assert_eq!(pixel.g(), 0);
+        assert_eq!(pixel.b(), 0);
+    }
+
+    #[test]
+    fn line_opacity_zero_noop() {
+        let mut buf = PixelBuffer::new(16, 16).unwrap();
+        let color = Color::new(255, 0, 0, 255);
+        let mut tool = LineTool::default();
+
+        tool.on_press(&mut make_ctx_opacity(&mut buf, color, 0.0), 0, 0)
+            .unwrap();
+        let result = tool
+            .on_release(&mut make_ctx_opacity(&mut buf, color, 0.0), 5, 5)
+            .unwrap();
+
+        assert_eq!(result, ToolResult::NoOp);
+        // No pixels should be painted
+        assert_eq!(buf.get_pixel(0, 0).unwrap(), Color::TRANSPARENT);
+        assert_eq!(buf.get_pixel(3, 3).unwrap(), Color::TRANSPARENT);
     }
 
     #[test]

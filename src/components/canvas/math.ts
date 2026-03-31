@@ -128,14 +128,49 @@ export function clampPan(
   };
 }
 
+/** All-octant Bresenham's line algorithm, inclusive of both endpoints. */
+export function bresenhamLine(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+): Array<{ x: number; y: number }> {
+  const points: Array<{ x: number; y: number }> = [];
+
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+
+  let cx = x0;
+  let cy = y0;
+
+  for (;;) {
+    points.push({ x: cx, y: cy });
+    if (cx === x1 && cy === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      cx += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      cy += sy;
+    }
+  }
+
+  return points;
+}
+
 /**
  * Pixel grid opacity. Returns 0 below threshold, linearly interpolates
- * from 0.2 at threshold to GRID_MAX_OPACITY at 16+.
+ * from 0.2 at threshold to GRID_MAX_OPACITY at threshold * 2.
  */
 export function gridOpacity(zoom: number): number {
   if (zoom < GRID_THRESHOLD) return 0;
-  if (zoom >= 16) return GRID_MAX_OPACITY;
-  // Linear interpolation from 0.2 at 4 to 0.5 at 16
-  const t = (zoom - GRID_THRESHOLD) / (16 - GRID_THRESHOLD);
+  const fullOpacityZoom = GRID_THRESHOLD * 2;
+  if (zoom >= fullOpacityZoom) return GRID_MAX_OPACITY;
+  const t = (zoom - GRID_THRESHOLD) / (fullOpacityZoom - GRID_THRESHOLD);
   return 0.2 + t * (GRID_MAX_OPACITY - 0.2);
 }

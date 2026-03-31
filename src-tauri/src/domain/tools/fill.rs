@@ -109,11 +109,7 @@ mod tests {
     }
 
     fn make_ctx(buffer: &mut PixelBuffer, color: Color) -> ToolContext<'_> {
-        ToolContext {
-            buffer,
-            color,
-            brush_size: BrushSize::DEFAULT,
-        }
+        ToolContext::new(buffer, color, BrushSize::DEFAULT, 1.0)
     }
 
     // 1. Fill a contiguous 4×4 region inside an 8×8 buffer.

@@ -1,49 +1,39 @@
 import {
   Eraser,
   Minus,
+  Move,
   PaintBucket,
   Paintbrush,
   Pipette,
-  Redo2,
   SquareDashed,
-  Undo2,
+  ZoomIn,
 } from "lucide-react";
-import { useCallback } from "react";
-import { redo, undo } from "../../api/commands";
-import { useEditorStore } from "../../store/editorStore";
 import { type ToolType, useToolStore } from "../../store/toolStore";
 import { colors } from "../../styles/theme";
+import { finalizeActiveStroke } from "../canvas/CanvasViewport";
 
-const TOOLS: { type: ToolType; icon: React.ElementType }[] = [
+const DRAWING_TOOLS: { type: ToolType; icon: React.ElementType }[] = [
   { type: "brush", icon: Paintbrush },
   { type: "eraser", icon: Eraser },
   { type: "fill", icon: PaintBucket },
   { type: "eyedropper", icon: Pipette },
   { type: "line", icon: Minus },
-  { type: "rectangle", icon: SquareDashed },
+  { type: "selection", icon: SquareDashed },
+];
+
+const NAV_TOOLS: { type: ToolType; icon: React.ElementType }[] = [
+  { type: "move", icon: Move },
+  { type: "zoom", icon: ZoomIn },
 ];
 
 export function ToolsSidebar() {
   const activeToolType = useToolStore((s) => s.activeToolType);
   const setActiveToolType = useToolStore((s) => s.setActiveToolType);
-  const canUndo = useEditorStore((s) => s.canUndo);
-  const canRedo = useEditorStore((s) => s.canRedo);
 
-  const handleUndo = useCallback(async () => {
-    try {
-      await undo();
-    } catch {
-      useEditorStore.getState().refreshState();
-    }
-  }, []);
-
-  const handleRedo = useCallback(async () => {
-    try {
-      await redo();
-    } catch {
-      useEditorStore.getState().refreshState();
-    }
-  }, []);
+  const handleToolClick = (type: ToolType) => {
+    finalizeActiveStroke();
+    setActiveToolType(type);
+  };
 
   return (
     <div
@@ -58,11 +48,11 @@ export function ToolsSidebar() {
         gap: 4,
       }}
     >
-      {TOOLS.map(({ type, icon: Icon }) => (
+      {DRAWING_TOOLS.map(({ type, icon: Icon }) => (
         <ToolButton
           key={type}
           active={activeToolType === type}
-          onClick={() => setActiveToolType(type)}
+          onClick={() => handleToolClick(type)}
         >
           <Icon size={18} />
         </ToolButton>
@@ -77,12 +67,15 @@ export function ToolsSidebar() {
         }}
       />
 
-      <ToolButton onClick={handleUndo} disabled={!canUndo}>
-        <Undo2 size={18} />
-      </ToolButton>
-      <ToolButton onClick={handleRedo} disabled={!canRedo}>
-        <Redo2 size={18} />
-      </ToolButton>
+      {NAV_TOOLS.map(({ type, icon: Icon }) => (
+        <ToolButton
+          key={type}
+          active={activeToolType === type}
+          onClick={() => handleToolClick(type)}
+        >
+          <Icon size={18} />
+        </ToolButton>
+      ))}
     </div>
   );
 }

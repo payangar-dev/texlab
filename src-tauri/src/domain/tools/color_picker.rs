@@ -55,11 +55,7 @@ mod tests {
     use crate::domain::tools::Tool;
 
     fn make_ctx(buffer: &mut PixelBuffer) -> ToolContext<'_> {
-        ToolContext {
-            buffer,
-            color: Color::TRANSPARENT,
-            brush_size: BrushSize::DEFAULT,
-        }
+        ToolContext::new(buffer, Color::TRANSPARENT, BrushSize::DEFAULT, 1.0)
     }
 
     #[test]

@@ -70,7 +70,7 @@ impl fmt::Display for DomainError {
             Self::EmptyPath => write!(f, "path must not be empty"),
             Self::IoError { reason } => write!(f, "I/O error: {reason}"),
             Self::InvalidBrushSize { size } => {
-                write!(f, "invalid brush size: {size}, must be 1..=16")
+                write!(f, "invalid brush size: {size}, must be 1..=32")
             }
             Self::EmptyHistory => write!(f, "no history entries available"),
             Self::BufferSizeMismatch { expected, actual } => {
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn display_invalid_brush_size() {
         let err = DomainError::InvalidBrushSize { size: 0 };
-        assert_eq!(err.to_string(), "invalid brush size: 0, must be 1..=16");
+        assert_eq!(err.to_string(), "invalid brush size: 0, must be 1..=32");
     }
 
     #[test]
