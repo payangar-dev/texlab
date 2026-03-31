@@ -124,25 +124,27 @@ describe("fitToViewportZoom", () => {
 });
 
 describe("gridOpacity", () => {
+  // GRID_THRESHOLD = 16, fullOpacityZoom = 32
+
   it("returns 0 below threshold", () => {
     expect(gridOpacity(1)).toBe(0);
-    expect(gridOpacity(3)).toBe(0);
-    expect(gridOpacity(3.99)).toBe(0);
+    expect(gridOpacity(8)).toBe(0);
+    expect(gridOpacity(15.99)).toBe(0);
   });
 
-  it("returns 0.2 at threshold (zoom=4)", () => {
-    expect(gridOpacity(4)).toBeCloseTo(0.2);
+  it("returns 0.2 at threshold (zoom=16)", () => {
+    expect(gridOpacity(16)).toBeCloseTo(0.2);
   });
 
-  it("returns GRID_MAX_OPACITY at zoom>=16", () => {
-    expect(gridOpacity(16)).toBeCloseTo(0.5);
+  it("returns GRID_MAX_OPACITY at zoom>=32", () => {
     expect(gridOpacity(32)).toBeCloseTo(0.5);
+    expect(gridOpacity(64)).toBeCloseTo(0.5);
     expect(gridOpacity(128)).toBeCloseTo(0.5);
   });
 
-  it("interpolates between 4 and 16", () => {
-    // At zoom=10: t = (10-4)/(16-4) = 0.5, opacity = 0.2 + 0.5*0.3 = 0.35
-    expect(gridOpacity(10)).toBeCloseTo(0.35);
+  it("interpolates between 16 and 32", () => {
+    // At zoom=24: t = (24-16)/(32-16) = 0.5, opacity = 0.2 + 0.5*0.3 = 0.35
+    expect(gridOpacity(24)).toBeCloseTo(0.35);
   });
 });
 
