@@ -1,4 +1,5 @@
 import type { IDockviewPanelProps } from "dockview";
+import { fontSizes } from "../../styles/theme";
 
 export function SourcesPanel(_props: IDockviewPanelProps) {
   return (
@@ -19,6 +20,6 @@ const containerStyle: React.CSSProperties = {
 
 const placeholderStyle: React.CSSProperties = {
   color: "#666666",
-  fontSize: 13,
+  fontSize: fontSizes.lg,
   userSelect: "none",
 };

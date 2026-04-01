@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useEditorStore } from "../../store/editorStore";
 import { useViewportStore } from "../../store/viewportStore";
+import { colors, fontSizes, fonts } from "../../styles/theme";
 import { subscribeToCursor } from "../canvas/CanvasViewport";
 
 const monoStyle: React.CSSProperties = {
-  fontFamily: "'Geist Mono', monospace",
-  fontSize: 10,
-  color: "#888888",
+  fontFamily: fonts.mono,
+  fontSize: fontSizes.sm,
+  color: colors.textSecondary,
   whiteSpace: "nowrap",
 };
 
@@ -24,7 +25,7 @@ export default function StatusBar() {
       style={{
         height: 28,
         minHeight: 28,
-        background: "#161616",
+        background: colors.statusBar,
         display: "flex",
         alignItems: "center",
         gap: 24,

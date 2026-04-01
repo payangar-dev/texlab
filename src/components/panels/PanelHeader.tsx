@@ -1,6 +1,6 @@
 import type { IDockviewPanelHeaderProps } from "dockview";
 import { GripHorizontal } from "lucide-react";
-import { colors, fonts } from "../../styles/theme";
+import { colors, fontSizes, fonts } from "../../styles/theme";
 
 export function PanelHeader({ api }: IDockviewPanelHeaderProps) {
   return (
@@ -21,7 +21,7 @@ export function PanelHeader({ api }: IDockviewPanelHeaderProps) {
       <span
         style={{
           fontFamily: fonts.ui,
-          fontSize: 10,
+          fontSize: fontSizes.sm,
           fontWeight: 600,
           color: colors.textTitle,
           lineHeight: "28px",

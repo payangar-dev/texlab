@@ -8,6 +8,7 @@ function resetStore() {
     opacity: 100,
     activeColor: { r: 0, g: 0, b: 0, a: 255 },
     secondaryColor: { r: 255, g: 255, b: 255, a: 255 },
+    activeSlot: "primary",
     pipetteMode: "composite",
   });
 }
@@ -118,6 +119,63 @@ describe("toolStore", () => {
     });
   });
 
+  describe("activeSlot", () => {
+    it("defaults to primary", () => {
+      expect(useToolStore.getState().activeSlot).toBe("primary");
+    });
+
+    it("switches to secondary", () => {
+      useToolStore.getState().setActiveSlot("secondary");
+      expect(useToolStore.getState().activeSlot).toBe("secondary");
+    });
+
+    it("switches back to primary", () => {
+      useToolStore.getState().setActiveSlot("secondary");
+      useToolStore.getState().setActiveSlot("primary");
+      expect(useToolStore.getState().activeSlot).toBe("primary");
+    });
+  });
+
+  describe("setActiveColor with activeSlot", () => {
+    it("routes to activeColor when slot is primary", () => {
+      const color = { r: 255, g: 0, b: 0, a: 255 };
+      useToolStore.getState().setActiveColor(color);
+      expect(useToolStore.getState().activeColor).toEqual(color);
+      expect(useToolStore.getState().secondaryColor).toEqual({
+        r: 255,
+        g: 255,
+        b: 255,
+        a: 255,
+      });
+    });
+
+    it("routes to secondaryColor when slot is secondary", () => {
+      useToolStore.getState().setActiveSlot("secondary");
+      const color = { r: 0, g: 0, b: 255, a: 255 };
+      useToolStore.getState().setActiveColor(color);
+      expect(useToolStore.getState().secondaryColor).toEqual(color);
+      expect(useToolStore.getState().activeColor).toEqual({ r: 0, g: 0, b: 0, a: 255 });
+    });
+  });
+
+  describe("swapColors with activeSlot", () => {
+    it("does not change activeSlot", () => {
+      useToolStore.getState().setActiveSlot("secondary");
+      useToolStore.getState().swapColors();
+      expect(useToolStore.getState().activeSlot).toBe("secondary");
+    });
+  });
+
+  describe("setSecondaryColor", () => {
+    it("always writes to secondaryColor regardless of activeSlot", () => {
+      useToolStore.getState().setActiveSlot("secondary");
+      const color = { r: 100, g: 50, b: 25, a: 255 };
+      useToolStore.getState().setSecondaryColor(color);
+      expect(useToolStore.getState().secondaryColor).toEqual(color);
+      expect(useToolStore.getState().activeColor).toEqual({ r: 0, g: 0, b: 0, a: 255 });
+    });
+  });
+
   describe("defaults", () => {
     it("starts with correct default values", () => {
       const state = useToolStore.getState();
@@ -126,6 +184,7 @@ describe("toolStore", () => {
       expect(state.opacity).toBe(100);
       expect(state.activeColor).toEqual({ r: 0, g: 0, b: 0, a: 255 });
       expect(state.secondaryColor).toEqual({ r: 255, g: 255, b: 255, a: 255 });
+      expect(state.activeSlot).toBe("primary");
       expect(state.pipetteMode).toBe("composite");
     });
   });

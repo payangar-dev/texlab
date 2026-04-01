@@ -1,7 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Copy, Minus, Square, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { colors, fonts } from "../../styles/theme";
+import { colors, fontSizes, fonts } from "../../styles/theme";
 
 const MENU_ITEMS = ["File", "Edit", "View", "Tools", "Help"] as const;
 
@@ -58,7 +58,7 @@ export function TitleBar({ onResetLayout }: { onResetLayout?: () => void }) {
         data-tauri-drag-region
         style={{
           fontFamily: fonts.ui,
-          fontSize: 13,
+          fontSize: fontSizes.lg,
           fontWeight: 600,
           color: colors.textPrimary,
           marginRight: 24,
@@ -77,7 +77,7 @@ export function TitleBar({ onResetLayout }: { onResetLayout?: () => void }) {
               onClick={onResetLayout}
               style={{
                 fontFamily: fonts.ui,
-                fontSize: 12,
+                fontSize: fontSizes.md,
                 color: colors.textSecondary,
                 cursor: "pointer",
                 background: "none",
@@ -93,7 +93,7 @@ export function TitleBar({ onResetLayout }: { onResetLayout?: () => void }) {
               data-tauri-drag-region
               style={{
                 fontFamily: fonts.ui,
-                fontSize: 12,
+                fontSize: fontSizes.md,
                 color: colors.textSecondary,
                 cursor: "default",
               }}
