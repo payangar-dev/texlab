@@ -22,3 +22,10 @@ export const fonts = {
   ui: "Inter, system-ui, -apple-system, sans-serif",
   mono: "'Geist Mono', monospace",
 } as const;
+
+export const fontSizes = {
+  xs: 11,
+  sm: 12,
+  md: 13,
+  lg: 14,
+} as const;

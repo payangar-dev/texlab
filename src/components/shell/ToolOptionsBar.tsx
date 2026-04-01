@@ -1,5 +1,5 @@
 import { type ToolType, useToolStore } from "../../store/toolStore";
-import { colors, fonts } from "../../styles/theme";
+import { colors, fontSizes, fonts } from "../../styles/theme";
 
 const TOOL_LABELS: Record<ToolType, string> = {
   brush: "Brush",
@@ -13,14 +13,14 @@ const TOOL_LABELS: Record<ToolType, string> = {
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 10,
+  fontSize: fontSizes.sm,
   color: colors.textSecondary,
   userSelect: "none",
   fontFamily: fonts.ui,
 };
 
 const titleStyle: React.CSSProperties = {
-  fontSize: 11,
+  fontSize: fontSizes.md,
   fontWeight: 600,
   color: colors.textTitle,
   userSelect: "none",
@@ -39,7 +39,7 @@ const valueBoxStyle: React.CSSProperties = {
 };
 
 const valueTextStyle: React.CSSProperties = {
-  fontSize: 9,
+  fontSize: fontSizes.xs,
   color: colors.textTitle,
   fontFamily: fonts.mono,
 };
@@ -69,7 +69,7 @@ function NumericInput({
           max={max}
           value={value}
           onChange={(e) => {
-            const v = parseInt(e.target.value, 10);
+            const v = Number.parseInt(e.target.value, 10);
             if (!Number.isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
           }}
           style={{
@@ -105,7 +105,7 @@ function ToggleButton({
         ...valueBoxStyle,
         background: active ? colors.accent : colors.inputField,
         color: active ? "#FFFFFF" : colors.textSecondary,
-        fontSize: 9,
+        fontSize: fontSizes.xs,
         fontFamily: fonts.ui,
         border: "none",
         cursor: "pointer",

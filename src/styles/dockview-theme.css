@@ -8,7 +8,7 @@
   /* Tab bar */
   --dv-tabs-and-actions-container-background-color: #2a2a2a;
   --dv-tabs-and-actions-container-height: 28px;
-  --dv-tabs-and-actions-container-font-size: 10px;
+  --dv-tabs-and-actions-container-font-size: 12px; /* fontSizes.sm */
 
   /* Active group tabs */
   --dv-activegroup-visiblepanel-tab-background-color: #2a2a2a;
@@ -42,7 +42,7 @@
   --dv-paneview-active-outline-color: transparent;
 
   /* Tab styling */
-  --dv-tab-font-size: 10px;
+  --dv-tab-font-size: 12px; /* fontSizes.sm */
   --dv-tab-margin: 0;
   --dv-border-radius: 0px;
 
@@ -70,7 +70,7 @@
 /* Default tab typography */
 .dockview-theme-dark .dv-default-tab {
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  font-size: 10px;
+  font-size: 12px; /* fontSizes.sm */
   font-weight: 600;
   padding: 0 8px;
 }

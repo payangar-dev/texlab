@@ -5,6 +5,7 @@ import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useResizeObserver } from "../../hooks/useResizeObserver";
 import { useEditorStore } from "../../store/editorStore";
 import { useViewportStore } from "../../store/viewportStore";
+import { fontSizes } from "../../styles/theme";
 import { ToolOptionsBar } from "../shell/ToolOptionsBar";
 import { useCanvasRenderer } from "./useCanvasRenderer";
 import { useViewportControls } from "./useViewportControls";
@@ -118,7 +119,7 @@ const CanvasViewport = memo(function CanvasViewport(_props?: Record<string, unkn
             overflow: "hidden",
           }}
         >
-          <span style={{ color: "#666", fontSize: 14, userSelect: "none" }}>
+          <span style={{ color: "#666", fontSize: fontSizes.lg, userSelect: "none" }}>
             No texture loaded
           </span>
         </div>
