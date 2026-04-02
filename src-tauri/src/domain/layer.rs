@@ -116,6 +116,26 @@ impl Layer {
         self.blend_mode = mode;
     }
 
+    /// Creates a copy of this layer with the given ID and " (copy)" name suffix.
+    /// The duplicate is always unlocked regardless of the source layer's lock state.
+    pub fn duplicate(&self, new_id: LayerId) -> Result<Self, DomainError> {
+        let name = format!("{} (copy)", self.name);
+        let buffer = PixelBuffer::from_raw_parts(
+            self.buffer.width(),
+            self.buffer.height(),
+            self.buffer.clone_data(),
+        )?;
+        Ok(Self {
+            id: new_id,
+            name,
+            buffer,
+            opacity: self.opacity,
+            blend_mode: self.blend_mode,
+            visible: self.visible,
+            locked: false,
+        })
+    }
+
     pub fn set_name(&mut self, name: String) -> Result<(), DomainError> {
         if name.is_empty() {
             return Err(DomainError::EmptyName);
@@ -273,6 +293,35 @@ mod tests {
         let buf = layer.buffer_mut().unwrap();
         buf.set_pixel(0, 0, Color::WHITE).unwrap();
         assert_eq!(layer.buffer().get_pixel(0, 0).unwrap(), Color::WHITE);
+    }
+
+    #[test]
+    fn duplicate_copies_all_properties() {
+        let mut layer = test_layer();
+        layer.set_opacity(0.5);
+        layer.set_blend_mode(BlendMode::Multiply);
+        layer.set_visible(false);
+        layer.set_locked(true);
+        let dup = layer.duplicate(LayerId::new(99)).unwrap();
+        assert_eq!(dup.id(), LayerId::new(99));
+        assert_eq!(dup.name(), "test (copy)");
+        assert_eq!(dup.opacity(), 0.5);
+        assert_eq!(dup.blend_mode(), BlendMode::Multiply);
+        assert!(!dup.is_visible());
+        assert!(
+            !dup.is_locked(),
+            "duplicate must be unlocked regardless of source"
+        );
+    }
+
+    #[test]
+    fn duplicate_deep_copies_buffer() {
+        let mut layer = test_layer();
+        layer.set_pixel(1, 1, Color::WHITE).unwrap();
+        let dup = layer.duplicate(LayerId::new(2)).unwrap();
+        assert_eq!(dup.buffer().get_pixel(1, 1).unwrap(), Color::WHITE);
+        assert_eq!(dup.buffer().width(), 4);
+        assert_eq!(dup.buffer().height(), 4);
     }
 
     #[test]

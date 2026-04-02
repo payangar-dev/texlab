@@ -6,6 +6,9 @@ use crate::domain::DomainError;
 pub enum AppError {
     #[error("{0}")]
     Internal(String),
+
+    #[error("{0}")]
+    Validation(String),
 }
 
 impl serde::Serialize for AppError {

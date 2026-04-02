@@ -25,7 +25,7 @@ pub struct TextureMetadataDto {
     pub dirty: bool,
 }
 
-/// Layer metadata without pixel data.
+/// Layer metadata with thumbnail pixel data.
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LayerInfoDto {
@@ -35,6 +35,7 @@ pub struct LayerInfoDto {
     pub blend_mode: String,
     pub visible: bool,
     pub locked: bool,
+    pub thumbnail: Vec<u8>,
 }
 
 /// Composited pixel data for canvas rendering.
@@ -99,6 +100,7 @@ impl From<&Layer> for LayerInfoDto {
             blend_mode: blend_mode_to_str(layer.blend_mode()),
             visible: layer.is_visible(),
             locked: layer.is_locked(),
+            thumbnail: layer.buffer().clone_data(),
         }
     }
 }

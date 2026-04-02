@@ -43,6 +43,7 @@ impl EditorService {
     }
 
     /// Direct mutation access WITHOUT undo tracking.
+    /// Callers are responsible for capturing a snapshot before mutating if undo is required.
     pub(crate) fn texture_mut(&mut self) -> &mut Texture {
         &mut self.texture
     }
@@ -267,6 +268,65 @@ impl EditorService {
     pub fn add_layer(&mut self, id: LayerId, name: &str) -> Result<(), DomainError> {
         let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
         self.texture.add_layer(id, name.to_string())?;
+        self.undo_manager
+            .push(UndoEntry::new(OperationType::LayerAdd, snapshot));
+        Ok(())
+    }
+
+    pub fn add_layer_above(
+        &mut self,
+        id: LayerId,
+        name: &str,
+        above_id: Option<LayerId>,
+    ) -> Result<(), DomainError> {
+        let layer = Layer::new(
+            id,
+            name.to_string(),
+            self.texture.width(),
+            self.texture.height(),
+        )?;
+        // Snapshot after validation to avoid unnecessary allocation on failure
+        let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
+        match above_id {
+            Some(ref_id) => {
+                let index = self.texture.layer_stack().index_of(ref_id).ok_or(
+                    DomainError::LayerNotFound {
+                        layer_id: ref_id.value(),
+                    },
+                )?;
+                self.texture
+                    .layer_stack_mut()
+                    .insert_layer(index + 1, layer)?;
+            }
+            None => {
+                self.texture.layer_stack_mut().add_layer(layer);
+            }
+        }
+        self.texture.mark_dirty();
+        self.undo_manager
+            .push(UndoEntry::new(OperationType::LayerAdd, snapshot));
+        Ok(())
+    }
+
+    pub fn duplicate_layer(
+        &mut self,
+        source_id: LayerId,
+        new_id: LayerId,
+    ) -> Result<(), DomainError> {
+        let index =
+            self.texture
+                .layer_stack()
+                .index_of(source_id)
+                .ok_or(DomainError::LayerNotFound {
+                    layer_id: source_id.value(),
+                })?;
+        let duplicate = self.texture.layer_stack().layers()[index].duplicate(new_id)?;
+        // Snapshot after validation to avoid unnecessary allocation on failure
+        let snapshot = TextureSnapshot::capture(self.texture.layer_stack());
+        self.texture
+            .layer_stack_mut()
+            .insert_layer(index + 1, duplicate)?;
+        self.texture.mark_dirty();
         self.undo_manager
             .push(UndoEntry::new(OperationType::LayerAdd, snapshot));
         Ok(())
@@ -1281,5 +1341,135 @@ mod tests {
         let data = writer.data.borrow();
         // First pixel should be white (255,255,255,255)
         assert_eq!(&data[0..4], &[255, 255, 255, 255]);
+    }
+
+    // === Layers Panel: add_layer_above, duplicate_layer ===
+
+    #[test]
+    fn add_layer_above_inserts_after_reference() {
+        let mut svc = test_service();
+        let id1 = LayerId::new(1);
+        svc.add_layer(LayerId::new(2), "top").unwrap();
+
+        svc.add_layer_above(LayerId::new(3), "middle", Some(id1))
+            .unwrap();
+
+        let names: Vec<&str> = svc
+            .texture()
+            .layer_stack()
+            .layers()
+            .iter()
+            .map(|l| l.name())
+            .collect();
+        assert_eq!(names, vec!["base", "middle", "top"]);
+    }
+
+    #[test]
+    fn add_layer_above_none_appends_to_top() {
+        let mut svc = test_service();
+        svc.add_layer_above(LayerId::new(2), "new_top", None)
+            .unwrap();
+
+        let last = svc.texture().layer_stack().layers().last().unwrap();
+        assert_eq!(last.name(), "new_top");
+    }
+
+    #[test]
+    fn add_layer_above_is_undoable() {
+        let mut svc = test_service();
+        let id1 = LayerId::new(1);
+        svc.add_layer_above(LayerId::new(2), "above", Some(id1))
+            .unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 2);
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+    }
+
+    #[test]
+    fn add_layer_above_missing_reference_returns_error() {
+        let mut svc = test_service();
+        let err = svc
+            .add_layer_above(LayerId::new(2), "nope", Some(LayerId::new(999)))
+            .unwrap_err();
+        assert_eq!(err, DomainError::LayerNotFound { layer_id: 999 });
+    }
+
+    #[test]
+    fn duplicate_layer_copies_above_source() {
+        let mut svc = test_service();
+        let id1 = LayerId::new(1);
+        svc.add_layer(LayerId::new(2), "top").unwrap();
+
+        svc.duplicate_layer(id1, LayerId::new(3)).unwrap();
+
+        let names: Vec<&str> = svc
+            .texture()
+            .layer_stack()
+            .layers()
+            .iter()
+            .map(|l| l.name())
+            .collect();
+        assert_eq!(names, vec!["base", "base (copy)", "top"]);
+    }
+
+    #[test]
+    fn duplicate_layer_copies_pixel_data() {
+        let mut svc = test_service();
+        let id1 = LayerId::new(1);
+        let mut tool = BrushTool::default();
+        brush_stroke(&mut svc, &mut tool, id1, 0, 0, Color::WHITE);
+
+        svc.duplicate_layer(id1, LayerId::new(2)).unwrap();
+
+        let dup = svc
+            .texture()
+            .layer_stack()
+            .get_layer(LayerId::new(2))
+            .unwrap();
+        assert_eq!(dup.buffer().get_pixel(0, 0).unwrap(), Color::WHITE);
+    }
+
+    #[test]
+    fn duplicate_layer_is_undoable() {
+        let mut svc = test_service();
+        svc.duplicate_layer(LayerId::new(1), LayerId::new(2))
+            .unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 2);
+
+        svc.undo().unwrap();
+        assert_eq!(svc.texture().layer_stack().len(), 1);
+    }
+
+    #[test]
+    fn duplicate_layer_missing_source_returns_error() {
+        let mut svc = test_service();
+        let err = svc
+            .duplicate_layer(LayerId::new(999), LayerId::new(2))
+            .unwrap_err();
+        assert_eq!(err, DomainError::LayerNotFound { layer_id: 999 });
+    }
+
+    #[test]
+    fn set_layer_name_empty_returns_error_without_undo_entry() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        let err = svc.set_layer_name(id, "").unwrap_err();
+        assert_eq!(err, DomainError::EmptyName);
+        assert!(!svc.can_undo(), "failed rename must not push undo entry");
+    }
+
+    #[test]
+    fn duplicate_layer_is_unlocked() {
+        let mut svc = test_service();
+        let id = LayerId::new(1);
+        svc.set_layer_locked(id, true).unwrap();
+        svc.duplicate_layer(id, LayerId::new(2)).unwrap();
+        let dup = svc
+            .texture()
+            .layer_stack()
+            .get_layer(LayerId::new(2))
+            .unwrap();
+        assert!(!dup.is_locked(), "duplicated layer must be unlocked");
     }
 }

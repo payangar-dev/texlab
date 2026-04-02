@@ -27,6 +27,8 @@ export interface LayerInfoDto {
   blendMode: BlendMode;
   visible: boolean;
   locked: boolean;
+  /** Raw RGBA bytes (u8 0–255), length = width * height * 4. Dimensions from TextureMetadataDto. */
+  thumbnail: number[];
 }
 
 export interface CompositeDto {
@@ -188,6 +190,10 @@ export function setLayerBlendMode(
 
 export function setLayerName(layerId: string, name: string): Promise<EditorStateDto> {
   return invoke("set_layer_name", { layerId, name });
+}
+
+export function duplicateLayer(layerId: string): Promise<EditorStateDto> {
+  return invoke("duplicate_layer", { layerId });
 }
 
 export function setLayerLocked(

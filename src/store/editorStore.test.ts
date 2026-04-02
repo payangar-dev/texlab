@@ -53,6 +53,7 @@ describe("editorStore", () => {
           blendMode: "normal",
           visible: true,
           locked: false,
+          thumbnail: [],
         },
       ],
       activeLayerId: "abc123",
@@ -89,6 +90,48 @@ describe("editorStore", () => {
     expect(state.texture).toBeNull();
     expect(state.layers).toEqual([]);
     expect(state.activeLayerId).toBeNull();
+  });
+
+  it("refreshState defaults activeLayerId to topmost layer when null", async () => {
+    const stateWithoutActive: EditorStateDto = {
+      texture: {
+        namespace: "minecraft",
+        path: "block/stone",
+        width: 16,
+        height: 16,
+        dirty: false,
+      },
+      layers: [
+        {
+          id: "bottom",
+          name: "Bottom",
+          opacity: 1.0,
+          blendMode: "normal",
+          visible: true,
+          locked: false,
+          thumbnail: [],
+        },
+        {
+          id: "top",
+          name: "Top",
+          opacity: 1.0,
+          blendMode: "normal",
+          visible: true,
+          locked: false,
+          thumbnail: [],
+        },
+      ],
+      activeLayerId: null,
+      canUndo: false,
+      canRedo: false,
+    };
+
+    mockedInvoke.mockResolvedValueOnce(stateWithoutActive);
+
+    await useEditorStore.getState().refreshState();
+
+    // Should default to topmost layer (last in array = bottom-to-top order)
+    expect(useEditorStore.getState().activeLayerId).toBe("top");
   });
 
   it("refreshState handles errors gracefully", async () => {

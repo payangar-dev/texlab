@@ -1,25 +1,6 @@
 import type { IDockviewPanelProps } from "dockview";
-import { fontSizes } from "../../styles/theme";
+import { LayersPanel as LayersPanelContent } from "../layers/LayersPanel";
 
 export function LayersPanel(_props: IDockviewPanelProps) {
-  return (
-    <div style={containerStyle}>
-      <span style={placeholderStyle}>Layers</span>
-    </div>
-  );
+  return <LayersPanelContent />;
 }
-
-const containerStyle: React.CSSProperties = {
-  width: "100%",
-  height: "100%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "#252525",
-};
-
-const placeholderStyle: React.CSSProperties = {
-  color: "#666666",
-  fontSize: fontSizes.lg,
-  userSelect: "none",
-};

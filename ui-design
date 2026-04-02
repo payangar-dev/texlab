@@ -229,7 +229,7 @@
               "reusable": true,
               "clip": true,
               "width": 260,
-              "height": 180,
+              "height": 210,
               "fill": "#252525",
               "cornerRadius": 6,
               "layout": "vertical",
@@ -388,6 +388,69 @@
                           "fontFamily": "Geist Mono",
                           "fontSize": 8,
                           "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "uYVM5",
+                  "name": "plBlend",
+                  "width": "fill_container",
+                  "height": 28,
+                  "gap": 6,
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "r33y5",
+                      "name": "blendLabel",
+                      "fill": "#888888",
+                      "content": "Blend",
+                      "fontFamily": "Inter",
+                      "fontSize": 9,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "H48Kv",
+                      "name": "plBlendDrop",
+                      "width": "fill_container",
+                      "height": 22,
+                      "fill": "#333333",
+                      "cornerRadius": 4,
+                      "gap": 4,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Zvwj9",
+                          "name": "blendValue",
+                          "fill": "#CCCCCC",
+                          "content": "Normal",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "SF5Bm",
+                          "name": "blendChevron",
+                          "width": 10,
+                          "height": 10,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "#888888"
                         }
                       ]
                     }
@@ -675,9 +738,48 @@
                       "id": "PVMNE",
                       "name": "pcHex",
                       "width": "fill_container",
-                      "gap": 6,
+                      "height": 24,
+                      "gap": 5,
                       "alignItems": "center",
                       "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 3,
+                          "id": "OuUBH",
+                          "name": "pcFg",
+                          "fill": "#000000",
+                          "width": 20,
+                          "height": 20,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1.5,
+                            "fill": "#4A9FD8"
+                          }
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "MAkG6",
+                          "name": "pcSwap",
+                          "width": 10,
+                          "height": 10,
+                          "iconFontName": "arrow-left-right",
+                          "iconFontFamily": "lucide",
+                          "fill": "#666666"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 3,
+                          "id": "ePXEo",
+                          "name": "pcBg",
+                          "fill": "#FFFFFF",
+                          "width": 20,
+                          "height": 20,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "#444444"
+                          }
+                        },
                         {
                           "type": "text",
                           "id": "5il2T",
@@ -713,15 +815,6 @@
                               "fontWeight": "normal"
                             }
                           ]
-                        },
-                        {
-                          "type": "rectangle",
-                          "cornerRadius": 4,
-                          "id": "wHvjZ",
-                          "name": "color-preview",
-                          "fill": "#4A9FD8",
-                          "width": 20,
-                          "height": 20
                         }
                       ]
                     }
@@ -3923,9 +4016,26 @@
                       "x": 78,
                       "y": 10
                     },
+                    "uYVM5": {
+                      "width": "fill_container",
+                      "y": 154
+                    },
+                    "r33y5": {
+                      "x": 8,
+                      "y": 8.5
+                    },
+                    "H48Kv": {
+                      "width": "fill_container",
+                      "x": 39,
+                      "y": 3
+                    },
+                    "Zvwj9": {
+                      "x": 6,
+                      "y": 5
+                    },
                     "fs63K": {
                       "width": "fill_container",
-                      "y": 152
+                      "y": 182
                     },
                     "QV4l3": {
                       "x": 6,
@@ -3960,7 +4070,7 @@
                   "width": "fill_container",
                   "name": "rpColor",
                   "x": 4,
-                  "y": 188,
+                  "y": 218,
                   "descendants": {
                     "oXM4u": {
                       "width": "fill_container"
@@ -3989,19 +4099,29 @@
                       "x": 6,
                       "y": 102
                     },
-                    "5il2T": {
+                    "OuUBH": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "MAkG6": {
+                      "x": 25,
                       "y": 5
+                    },
+                    "ePXEo": {
+                      "x": 40
+                    },
+                    "5il2T": {
+                      "y": 5,
+                      "x": 65
                     },
                     "InUfn": {
                       "width": "fill_container",
-                      "x": 21
+                      "x": 85,
+                      "y": 0
                     },
                     "hMaCH": {
                       "x": 6,
                       "y": 4
-                    },
-                    "wHvjZ": {
-                      "x": 240
                     }
                   }
                 },
@@ -4012,7 +4132,7 @@
                   "width": "fill_container",
                   "name": "rpPalette",
                   "x": 4,
-                  "y": 372,
+                  "y": 402,
                   "descendants": {
                     "D8yi5": {
                       "width": "fill_container"
@@ -4111,7 +4231,7 @@
                   "height": "fill_container",
                   "name": "rpModel",
                   "x": 4,
-                  "y": 506,
+                  "y": 536,
                   "descendants": {
                     "CbkNq": {
                       "width": "fill_container"
@@ -4958,9 +5078,26 @@
                       "x": 78,
                       "y": 10
                     },
+                    "uYVM5": {
+                      "width": "fill_container",
+                      "y": 154
+                    },
+                    "r33y5": {
+                      "x": 8,
+                      "y": 8.5
+                    },
+                    "H48Kv": {
+                      "width": "fill_container",
+                      "x": 39,
+                      "y": 3
+                    },
+                    "Zvwj9": {
+                      "x": 6,
+                      "y": 5
+                    },
                     "fs63K": {
                       "width": "fill_container",
-                      "y": 152
+                      "y": 182
                     },
                     "QV4l3": {
                       "x": 6,
@@ -4995,7 +5132,7 @@
                   "width": "fill_container",
                   "name": "cmpPnlColor",
                   "x": 4,
-                  "y": 188,
+                  "y": 218,
                   "descendants": {
                     "oXM4u": {
                       "width": "fill_container"
@@ -5024,19 +5161,29 @@
                       "x": 6,
                       "y": 102
                     },
-                    "5il2T": {
+                    "OuUBH": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "MAkG6": {
+                      "x": 25,
                       "y": 5
+                    },
+                    "ePXEo": {
+                      "x": 40
+                    },
+                    "5il2T": {
+                      "y": 5,
+                      "x": 65
                     },
                     "InUfn": {
                       "width": "fill_container",
-                      "x": 21
+                      "x": 85,
+                      "y": 0
                     },
                     "hMaCH": {
                       "x": 6,
                       "y": 4
-                    },
-                    "wHvjZ": {
-                      "x": 240
                     }
                   }
                 },
@@ -5047,7 +5194,7 @@
                   "width": "fill_container",
                   "name": "cmpPnlPalette",
                   "x": 4,
-                  "y": 372,
+                  "y": 402,
                   "descendants": {
                     "D8yi5": {
                       "width": "fill_container"
@@ -5146,7 +5293,7 @@
                   "height": "fill_container",
                   "name": "cmpPnlModel",
                   "x": 4,
-                  "y": 506,
+                  "y": 536,
                   "descendants": {
                     "CbkNq": {
                       "width": "fill_container"
@@ -5593,9 +5740,26 @@
                       "x": 78,
                       "y": 10
                     },
+                    "uYVM5": {
+                      "width": "fill_container",
+                      "y": 154
+                    },
+                    "r33y5": {
+                      "x": 8,
+                      "y": 8.5
+                    },
+                    "H48Kv": {
+                      "width": "fill_container",
+                      "x": 39,
+                      "y": 3
+                    },
+                    "Zvwj9": {
+                      "x": 6,
+                      "y": 5
+                    },
                     "fs63K": {
                       "width": "fill_container",
-                      "y": 152
+                      "y": 182
                     },
                     "QV4l3": {
                       "x": 6,
@@ -5630,7 +5794,7 @@
                   "width": "fill_container",
                   "name": "esColor",
                   "x": 4,
-                  "y": 188,
+                  "y": 218,
                   "descendants": {
                     "oXM4u": {
                       "width": "fill_container"
@@ -5659,19 +5823,29 @@
                       "x": 6,
                       "y": 102
                     },
-                    "5il2T": {
+                    "OuUBH": {
+                      "x": 0,
+                      "y": 0
+                    },
+                    "MAkG6": {
+                      "x": 25,
                       "y": 5
+                    },
+                    "ePXEo": {
+                      "x": 40
+                    },
+                    "5il2T": {
+                      "y": 5,
+                      "x": 65
                     },
                     "InUfn": {
                       "width": "fill_container",
-                      "x": 21
+                      "x": 85,
+                      "y": 0
                     },
                     "hMaCH": {
                       "x": 6,
                       "y": 4
-                    },
-                    "wHvjZ": {
-                      "x": 240
                     }
                   }
                 },
@@ -5682,7 +5856,7 @@
                   "width": "fill_container",
                   "name": "esPalette",
                   "x": 4,
-                  "y": 372,
+                  "y": 402,
                   "descendants": {
                     "D8yi5": {
                       "width": "fill_container"
@@ -5781,7 +5955,7 @@
                   "height": "fill_container",
                   "name": "esModel",
                   "x": 4,
-                  "y": 506,
+                  "y": 536,
                   "descendants": {
                     "CbkNq": {
                       "width": "fill_container"
