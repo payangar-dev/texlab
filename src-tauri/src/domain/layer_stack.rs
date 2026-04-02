@@ -20,6 +20,19 @@ impl LayerStack {
         self.layers.push(layer);
     }
 
+    pub fn insert_layer(&mut self, index: usize, layer: Layer) -> Result<(), DomainError> {
+        let len = self.layers.len();
+        if index > len {
+            return Err(DomainError::InvalidIndex { index, len });
+        }
+        self.layers.insert(index, layer);
+        Ok(())
+    }
+
+    pub fn index_of(&self, id: LayerId) -> Option<usize> {
+        self.layers.iter().position(|l| l.id() == id)
+    }
+
     pub fn remove_layer(&mut self, id: LayerId) -> Result<Layer, DomainError> {
         let pos =
             self.layers
@@ -368,6 +381,60 @@ mod tests {
         stack.add_layer(make_layer(42, "target", 2, 2));
         assert!(stack.get_layer(LayerId::new(42)).is_some());
         assert!(stack.get_layer(LayerId::new(99)).is_none());
+    }
+
+    #[test]
+    fn insert_layer_at_beginning() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+        stack.insert_layer(0, make_layer(2, "b", 2, 2)).unwrap();
+        assert_eq!(stack.layers()[0].name(), "b");
+        assert_eq!(stack.layers()[1].name(), "a");
+    }
+
+    #[test]
+    fn insert_layer_at_end() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+        stack.insert_layer(1, make_layer(2, "b", 2, 2)).unwrap();
+        assert_eq!(stack.layers()[0].name(), "a");
+        assert_eq!(stack.layers()[1].name(), "b");
+    }
+
+    #[test]
+    fn insert_layer_in_middle() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+        stack.add_layer(make_layer(2, "c", 2, 2));
+        stack.insert_layer(1, make_layer(3, "b", 2, 2)).unwrap();
+        assert_eq!(stack.layers()[0].name(), "a");
+        assert_eq!(stack.layers()[1].name(), "b");
+        assert_eq!(stack.layers()[2].name(), "c");
+    }
+
+    #[test]
+    fn insert_layer_out_of_bounds() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+        let err = stack.insert_layer(5, make_layer(2, "b", 2, 2)).unwrap_err();
+        assert_eq!(err, DomainError::InvalidIndex { index: 5, len: 1 });
+    }
+
+    #[test]
+    fn index_of_existing_layer() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+        stack.add_layer(make_layer(2, "b", 2, 2));
+        stack.add_layer(make_layer(3, "c", 2, 2));
+        assert_eq!(stack.index_of(LayerId::new(1)), Some(0));
+        assert_eq!(stack.index_of(LayerId::new(2)), Some(1));
+        assert_eq!(stack.index_of(LayerId::new(3)), Some(2));
+    }
+
+    #[test]
+    fn index_of_missing_layer() {
+        let stack = LayerStack::new();
+        assert_eq!(stack.index_of(LayerId::new(99)), None);
     }
 
     #[test]

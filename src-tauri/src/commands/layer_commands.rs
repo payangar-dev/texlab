@@ -21,7 +21,10 @@ pub fn add_layer(
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
 
     let layer_id = LayerId::new(uuid::Uuid::new_v4().as_u128());
-    state.editor_mut()?.add_layer(layer_id, &name)?;
+    let above_id = state.active_layer_id;
+    state
+        .editor_mut()?
+        .add_layer_above(layer_id, &name, above_id)?;
     state.active_layer_id = Some(layer_id);
     let dto = build_editor_state_dto(state.editor.as_ref(), state.active_layer_id);
 
@@ -41,15 +44,29 @@ pub fn remove_layer(
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
 
+    let stack = state.editor_ref()?.texture().layer_stack();
+    if stack.len() <= 1 {
+        return Err(AppError::Validation(
+            "Cannot delete the last layer".to_string(),
+        ));
+    }
+
+    // Remember position before removal to select the nearest layer afterwards
+    let removed_index = stack.index_of(parsed_id);
+
     state.editor_mut()?.remove_layer(parsed_id)?;
 
-    // Clear active_layer_id if the removed layer was active
+    // Select nearest remaining layer if the removed layer was active
     if state.active_layer_id == Some(parsed_id) {
-        state.active_layer_id = state
-            .editor_ref()
-            .ok()
-            .and_then(|e| e.texture().layer_stack().layers().first())
-            .map(|l| l.id());
+        let layers = state.editor_ref()?.texture().layer_stack().layers();
+        state.active_layer_id = if layers.is_empty() {
+            None
+        } else {
+            let nearest = removed_index
+                .unwrap_or(0)
+                .min(layers.len().saturating_sub(1));
+            Some(layers[nearest].id())
+        };
     }
 
     let dto = build_editor_state_dto(state.editor.as_ref(), state.active_layer_id);
@@ -152,6 +169,27 @@ pub fn set_layer_name(
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
 
     state.editor_mut()?.set_layer_name(parsed_id, &name)?;
+    let dto = build_editor_state_dto(state.editor.as_ref(), state.active_layer_id);
+
+    emit_state_changed(&app);
+    Ok(dto)
+}
+
+#[tauri::command]
+pub fn duplicate_layer(
+    app: AppHandle,
+    state: State<'_, Mutex<AppState>>,
+    layer_id: String,
+) -> Result<EditorStateDto, AppError> {
+    let parsed_id = parse_layer_id(&layer_id)?;
+    let new_id = LayerId::new(uuid::Uuid::new_v4().as_u128());
+
+    let mut state = state
+        .lock()
+        .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
+
+    state.editor_mut()?.duplicate_layer(parsed_id, new_id)?;
+    state.active_layer_id = Some(new_id);
     let dto = build_editor_state_dto(state.editor.as_ref(), state.active_layer_id);
 
     emit_state_changed(&app);

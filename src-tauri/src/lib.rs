@@ -32,6 +32,7 @@ pub fn run() {
             commands::set_layer_blend_mode,
             commands::set_layer_name,
             commands::set_layer_locked,
+            commands::duplicate_layer,
             commands::undo,
             commands::redo,
             commands::get_editor_state,

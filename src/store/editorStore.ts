@@ -17,6 +17,10 @@ export const useEditorStore = create<EditorStore>((set) => ({
   refreshState: async () => {
     try {
       const state = await getEditorState();
+      // Default to topmost layer if no active layer is set (US1-AS3)
+      if (!state.activeLayerId && state.layers.length > 0) {
+        state.activeLayerId = state.layers[state.layers.length - 1].id;
+      }
       set(state);
     } catch (err) {
       console.error("[editorStore] failed to refresh state:", err);
