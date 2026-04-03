@@ -10,6 +10,7 @@ function svgCursor(svg: string, hotX: number, hotY: number, fallback: string): s
   return `url('data:image/svg+xml,${encodeURIComponent(svg)}') ${hotX} ${hotY}, ${fallback}`;
 }
 
+import { isPanHeld } from "../../commands/definitions/view";
 import { useEditorStore } from "../../store/editorStore";
 import { type ToolType, useToolStore } from "../../store/toolStore";
 import { useViewportStore } from "../../store/viewportStore";
@@ -56,12 +57,10 @@ export function useViewportControls(
 ): {
   interactionModeRef: React.RefObject<InteractionMode>;
   cursorPixelRef: React.RefObject<{ x: number; y: number } | null>;
-  spaceHeldRef: React.RefObject<boolean>;
   lastCursorPixelRef: React.RefObject<{ x: number; y: number } | null>;
   finalizeStroke: () => void;
 } {
   const interactionModeRef = useRef<InteractionMode>("idle");
-  const spaceHeldRef = useRef(false);
   const panStartRef = useRef({ screenX: 0, screenY: 0, panX: 0, panY: 0 });
   const lastCursorPixelRef = useRef<{ x: number; y: number } | null>(null);
   const lastStrokeEndPointRef = useRef<{ x: number; y: number } | null>(null);
@@ -99,7 +98,7 @@ export function useViewportControls(
     const updateCursor = () => {
       if (interactionModeRef.current === "pan") {
         canvas.style.cursor = "grabbing";
-      } else if (spaceHeldRef.current) {
+      } else if (isPanHeld()) {
         canvas.style.cursor = "grab";
       } else {
         const tool = useToolStore.getState().activeToolType;
@@ -135,10 +134,10 @@ export function useViewportControls(
     };
 
     const onPointerDown = (e: PointerEvent) => {
-      // Only left-click triggers tools; right-click does nothing
+      // Left-click (0) triggers tools, middle-click (1) triggers pan
       if (e.button !== 0 && e.button !== 1) return;
 
-      const isPanTrigger = e.button === 1 || (e.button === 0 && spaceHeldRef.current);
+      const isPanTrigger = e.button === 1 || (e.button === 0 && isPanHeld());
 
       if (isPanTrigger && interactionModeRef.current === "idle") {
         interactionModeRef.current = "pan";
@@ -410,7 +409,6 @@ export function useViewportControls(
   return {
     interactionModeRef,
     cursorPixelRef: renderer.cursorPixelRef,
-    spaceHeldRef,
     lastCursorPixelRef,
     finalizeStroke,
   };

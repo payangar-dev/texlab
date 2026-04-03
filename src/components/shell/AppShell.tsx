@@ -1,12 +1,17 @@
 import { useRef } from "react";
+import { useCommandDispatcher } from "../../commands/dispatcher";
+import { initializeCommands } from "../../commands/index";
 import StatusBar from "../status-bar/StatusBar";
 import type { DockLayoutHandle } from "./DockLayout";
 import { DockLayout } from "./DockLayout";
 import { TitleBar } from "./TitleBar";
 import { ToolsSidebar } from "./ToolsSidebar";
 
+initializeCommands();
+
 export function AppShell() {
   const dockRef = useRef<DockLayoutHandle>(null);
+  useCommandDispatcher();
 
   return (
     <div

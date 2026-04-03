@@ -28,6 +28,17 @@ export interface DockLayoutHandle {
   resetToDefault: () => void;
 }
 
+/** Module-level callback for layout reset (used by layout commands). */
+let layoutResetCallback: (() => void) | null = null;
+
+export function setLayoutResetCallback(cb: (() => void) | null): void {
+  layoutResetCallback = cb;
+}
+
+export function triggerLayoutReset(): void {
+  layoutResetCallback?.();
+}
+
 export function buildDefaultLayout(api: DockviewApi) {
   const panelConstraints = { minimumWidth: 120, minimumHeight: 80 };
 
@@ -124,6 +135,12 @@ export const DockLayout = forwardRef<DockLayoutHandle>(function DockLayout(_prop
 
   useImperativeHandle(ref, () => ({ resetToDefault: doReset }), [doReset]);
 
+  // Register layout reset callback for command system
+  useEffect(() => {
+    setLayoutResetCallback(doReset);
+    return () => setLayoutResetCallback(null);
+  }, [doReset]);
+
   const handleReady = useCallback(
     async (event: DockviewReadyEvent) => {
       const api = event.api;
@@ -177,18 +194,6 @@ export const DockLayout = forwardRef<DockLayoutHandle>(function DockLayout(_prop
       clearTimeout(debounceTimerRef.current);
     };
   }, []);
-
-  // Keyboard shortcut: Ctrl+Shift+R to reset layout
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "R") {
-        e.preventDefault();
-        doReset();
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [doReset]);
 
   return (
     <DockviewReact
