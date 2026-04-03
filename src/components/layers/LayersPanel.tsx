@@ -15,7 +15,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Copy, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { BlendMode, LayerInfoDto } from "../../api/commands";
 import {
@@ -43,19 +43,6 @@ export function LayersPanel() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Delete" && !e.repeat) {
-        // Don't trigger if user is typing in an input (e.g. rename)
-        const tag = (e.target as HTMLElement).tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA") return;
-        handleRemoveLayer();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  });
 
   // Intentional frontend-only state: active layer selection is latency-sensitive
   // and does not require a backend round-trip. The backend's active_layer_id is

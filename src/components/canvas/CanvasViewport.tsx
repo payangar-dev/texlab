@@ -1,7 +1,6 @@
 import { listen } from "@tauri-apps/api/event";
 import { memo, useCallback, useEffect, useRef } from "react";
 import { getComposite } from "../../api/commands";
-import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useResizeObserver } from "../../hooks/useResizeObserver";
 import { useEditorStore } from "../../store/editorStore";
 import { useViewportStore } from "../../store/viewportStore";
@@ -15,7 +14,7 @@ export type CursorListener = (pixel: { x: number; y: number } | null) => void;
 
 const cursorListeners = new Set<CursorListener>();
 
-/** Module-level ref for mid-stroke finalization (used by ToolsSidebar and keyboard shortcuts). */
+/** Module-level ref for mid-stroke finalization (used by ToolsSidebar and command definitions). */
 let finalizeStrokeCallback: (() => void) | null = null;
 
 export function setFinalizeStrokeCallback(cb: (() => void) | null): void {
@@ -24,6 +23,17 @@ export function setFinalizeStrokeCallback(cb: (() => void) | null): void {
 
 export function finalizeActiveStroke(): void {
   finalizeStrokeCallback?.();
+}
+
+/** Module-level callback for canvas redraw (used by view commands). */
+let redrawCallback: (() => void) | null = null;
+
+export function setRedrawCallback(cb: (() => void) | null): void {
+  redrawCallback = cb;
+}
+
+export function requestCanvasRedraw(): void {
+  redrawCallback?.();
 }
 
 export function subscribeToCursor(listener: CursorListener): () => void {
@@ -45,14 +55,19 @@ const CanvasViewport = memo(function CanvasViewport(_props?: Record<string, unkn
   useResizeObserver(containerRef);
   const renderer = useCanvasRenderer(canvasRef);
   const { updateComposite, requestRedraw } = renderer;
-  const { spaceHeldRef, finalizeStroke } = useViewportControls(canvasRef, renderer);
-  useKeyboardShortcuts(spaceHeldRef, requestRedraw);
+  const { finalizeStroke } = useViewportControls(canvasRef, renderer);
 
   // Register finalizeStroke for external callers
   useEffect(() => {
     setFinalizeStrokeCallback(finalizeStroke);
     return () => setFinalizeStrokeCallback(null);
   }, [finalizeStroke]);
+
+  // Register redraw callback for external callers (view commands)
+  useEffect(() => {
+    setRedrawCallback(requestRedraw);
+    return () => setRedrawCallback(null);
+  }, [requestRedraw]);
 
   const fetchAndApplyComposite = useCallback(async () => {
     try {
