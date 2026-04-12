@@ -13,7 +13,11 @@ pub fn undo(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<EditorS
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
 
-    state.editor_mut()?.undo()?;
+    let was_mid_stroke = state.editor_mut()?.undo()?;
+    if was_mid_stroke {
+        state.active_tool = None;
+    }
+
     let dto = build_editor_state_dto(state.editor.as_ref(), state.active_layer_id);
 
     emit_state_changed(&app);
