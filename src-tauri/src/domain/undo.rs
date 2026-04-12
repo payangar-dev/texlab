@@ -62,27 +62,74 @@ pub enum OperationType {
     LayerPropertyChange,
 }
 
+/// Identifies which property of a layer is being changed (discriminant only, no value).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PropertyKind {
+    Opacity,
+    BlendMode,
+    Visibility,
+    Name,
+    Locked,
+}
+
+/// The old value of a single layer property, used for metadata-only undo.
+#[derive(Debug)]
+pub enum PropertyChange {
+    Opacity(f32),
+    BlendMode(BlendMode),
+    Visibility(bool),
+    Name(String),
+    Locked(bool),
+}
+
+impl PropertyChange {
+    pub fn kind(&self) -> PropertyKind {
+        match self {
+            Self::Opacity(_) => PropertyKind::Opacity,
+            Self::BlendMode(_) => PropertyKind::BlendMode,
+            Self::Visibility(_) => PropertyKind::Visibility,
+            Self::Name(_) => PropertyKind::Name,
+            Self::Locked(_) => PropertyKind::Locked,
+        }
+    }
+}
+
+/// Discriminated payload representing the minimum data needed to reverse an operation.
+#[derive(Debug)]
+pub enum UndoPayload {
+    /// Full pixel snapshot of a single affected layer (for draw operations).
+    SingleLayer(LayerSnapshot),
+    /// Full layer stack snapshot (for structural changes: add, remove, reorder).
+    FullStack(TextureSnapshot),
+    /// Metadata-only snapshot for a single layer property change.
+    Property {
+        layer_id: LayerId,
+        change: PropertyChange,
+    },
+}
+
 /// A single undoable step. Captures the state *before* the operation.
 #[derive(Debug)]
 pub struct UndoEntry {
     operation: OperationType,
-    snapshot: TextureSnapshot,
+    payload: UndoPayload,
 }
 
 impl UndoEntry {
-    pub fn new(operation: OperationType, snapshot: TextureSnapshot) -> Self {
-        Self {
-            operation,
-            snapshot,
-        }
+    pub(crate) fn new(operation: OperationType, payload: UndoPayload) -> Self {
+        Self { operation, payload }
     }
 
     pub fn operation(&self) -> &OperationType {
         &self.operation
     }
 
-    pub fn into_parts(self) -> (OperationType, TextureSnapshot) {
-        (self.operation, self.snapshot)
+    pub fn payload(&self) -> &UndoPayload {
+        &self.payload
+    }
+
+    pub fn into_parts(self) -> (OperationType, UndoPayload) {
+        (self.operation, self.payload)
     }
 }
 
@@ -124,6 +171,11 @@ impl UndoManager {
 
     pub(crate) fn pop_undo(&mut self) -> Option<UndoEntry> {
         self.undo_stack.pop_back()
+    }
+
+    /// Peeks at the most recent undo entry without removing it.
+    pub fn peek_undo(&self) -> Option<&UndoEntry> {
+        self.undo_stack.back()
     }
 
     pub(crate) fn push_redo(&mut self, entry: UndoEntry) {
@@ -182,7 +234,7 @@ mod tests {
     }
 
     fn make_entry(op: OperationType) -> UndoEntry {
-        UndoEntry::new(op, make_snapshot(1))
+        UndoEntry::new(op, UndoPayload::FullStack(make_snapshot(1)))
     }
 
     // --- Snapshot round-trip tests (T007) ---

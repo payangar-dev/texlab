@@ -2,7 +2,7 @@ use super::blend;
 use super::error::DomainError;
 use super::layer::{Layer, LayerId};
 use super::pixel_buffer::PixelBuffer;
-use super::undo::TextureSnapshot;
+use super::undo::{LayerSnapshot, TextureSnapshot};
 
 /// Ordered collection of layers (bottom to top).
 /// Manages layer lifecycle and compositing.
@@ -77,6 +77,17 @@ impl LayerStack {
         &self.layers
     }
 
+    /// Restores a single layer by ID from its snapshot, preserving all other layers.
+    pub fn restore_single_layer(&mut self, snapshot: LayerSnapshot) -> Result<(), DomainError> {
+        let layer = self
+            .get_layer_mut(snapshot.id)
+            .ok_or(DomainError::LayerNotFound {
+                layer_id: snapshot.id.value(),
+            })?;
+        layer.restore_from_snapshot(snapshot)?;
+        Ok(())
+    }
+
     /// Replaces all layers from the given texture snapshot.
     pub fn restore_from_snapshots(&mut self, snapshot: TextureSnapshot) -> Result<(), DomainError> {
         let mut new_layers = Vec::with_capacity(snapshot.layers.len());
@@ -132,6 +143,7 @@ mod tests {
     use super::*;
     use crate::domain::blend::BlendMode;
     use crate::domain::color::Color;
+    use crate::domain::undo::LayerSnapshot;
 
     fn make_layer(id: u128, name: &str, w: u32, h: u32) -> Layer {
         Layer::new(LayerId::new(id), name.to_string(), w, h).unwrap()
@@ -435,6 +447,67 @@ mod tests {
     fn index_of_missing_layer() {
         let stack = LayerStack::new();
         assert_eq!(stack.index_of(LayerId::new(99)), None);
+    }
+
+    #[test]
+    fn restore_single_layer_preserves_other_layers() {
+        let mut stack = LayerStack::new();
+        let red = Color::new(255, 0, 0, 255);
+        let blue = Color::new(0, 0, 255, 255);
+
+        let mut layer1 = make_layer(1, "a", 2, 2);
+        layer1.set_pixel(0, 0, red).unwrap();
+        stack.add_layer(layer1);
+
+        let mut layer2 = make_layer(2, "b", 2, 2);
+        layer2.set_pixel(0, 0, blue).unwrap();
+        stack.add_layer(layer2);
+
+        // Snapshot layer 1 before modification
+        let snapshot = LayerSnapshot::from_layer(stack.get_layer(LayerId::new(1)).unwrap());
+
+        // Modify layer 1
+        stack
+            .get_layer_mut(LayerId::new(1))
+            .unwrap()
+            .set_pixel(0, 0, Color::WHITE)
+            .unwrap();
+
+        // Restore layer 1
+        stack.restore_single_layer(snapshot).unwrap();
+
+        // Layer 1 restored
+        assert_eq!(
+            stack
+                .get_layer(LayerId::new(1))
+                .unwrap()
+                .buffer()
+                .get_pixel(0, 0)
+                .unwrap(),
+            red
+        );
+        // Layer 2 untouched
+        assert_eq!(
+            stack
+                .get_layer(LayerId::new(2))
+                .unwrap()
+                .buffer()
+                .get_pixel(0, 0)
+                .unwrap(),
+            blue
+        );
+    }
+
+    #[test]
+    fn restore_single_layer_unknown_id_returns_error() {
+        let mut stack = LayerStack::new();
+        stack.add_layer(make_layer(1, "a", 2, 2));
+
+        let snapshot = LayerSnapshot::from_layer(stack.get_layer(LayerId::new(1)).unwrap());
+        stack.remove_layer(LayerId::new(1)).unwrap();
+
+        let err = stack.restore_single_layer(snapshot).unwrap_err();
+        assert_eq!(err, DomainError::LayerNotFound { layer_id: 1 });
     }
 
     #[test]
