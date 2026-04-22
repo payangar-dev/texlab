@@ -12,6 +12,7 @@ pub mod color;
 pub mod error;
 pub mod layer;
 pub mod layer_stack;
+pub mod palette;
 pub mod pixel_buffer;
 pub mod ports;
 pub mod selection;
@@ -24,8 +25,14 @@ pub use color::Color;
 pub use error::DomainError;
 pub use layer::{Layer, LayerId};
 pub use layer_stack::LayerStack;
+pub use palette::{
+    ActiveMemory, AddColorOutcome, Palette, PaletteId, PaletteName, PaletteScope, Swatch,
+};
 pub use pixel_buffer::PixelBuffer;
-pub use ports::{ImageReader, ImageWriter, PackScanner, TextureEntry};
+pub use ports::{
+    ActiveMemoryStore, ImageReader, ImageWriter, PackScanner, PaletteCodec, PaletteStore,
+    TextureEntry,
+};
 pub use selection::Selection;
 pub use texture::Texture;
 pub use tools::{BrushSize, ToolContext, ToolResult};

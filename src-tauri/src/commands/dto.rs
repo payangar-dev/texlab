@@ -1,5 +1,6 @@
 use crate::domain::{
-    BlendMode, Color, Layer, LayerId, PixelBuffer, Selection, Texture, ToolResult,
+    BlendMode, Color, Layer, LayerId, Palette, PaletteScope, PixelBuffer, Selection, Texture,
+    ToolResult,
 };
 use crate::use_cases::editor_service::EditorService;
 
@@ -232,6 +233,78 @@ pub fn parse_layer_id(hex: &str) -> Result<LayerId, crate::error::AppError> {
     u128::from_str_radix(hex, 16)
         .map(LayerId::new)
         .map_err(|_| crate::error::AppError::Internal(format!("invalid layer id: {hex}")))
+}
+
+// --- Palette DTOs ---
+
+/// Wire type for a palette. `scope` is a lowercase string to match the
+/// BlendMode precedent; colors are `#RRGGBB` hex strings to match the file
+/// format.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaletteDto {
+    pub id: String,
+    pub name: String,
+    pub scope: String,
+    pub colors: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaletteListDto {
+    pub palettes: Vec<PaletteDto>,
+    pub active_palette_id: Option<String>,
+    pub can_create_project_palette: bool,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddColorResultDto {
+    pub added: bool,
+    pub index: usize,
+    pub palette: PaletteDto,
+}
+
+/// Wire type for the import strategy tagged union. Matches the TypeScript
+/// shape `{ action: "cancel" } | { action: "rename", newName: string } |
+/// { action: "overwrite" }`.
+#[derive(serde::Deserialize)]
+#[serde(tag = "action", rename_all = "camelCase")]
+pub enum ImportStrategyDto {
+    Cancel,
+    #[serde(rename_all = "camelCase")]
+    Rename {
+        new_name: String,
+    },
+    Overwrite,
+}
+
+pub fn scope_to_str(scope: PaletteScope) -> &'static str {
+    match scope {
+        PaletteScope::Global => "global",
+        PaletteScope::Project => "project",
+    }
+}
+
+pub fn str_to_scope(s: &str) -> Result<PaletteScope, crate::error::AppError> {
+    match s {
+        "global" => Ok(PaletteScope::Global),
+        "project" => Ok(PaletteScope::Project),
+        _ => Err(crate::error::AppError::Validation(format!(
+            "invalid-palette-scope:{s}"
+        ))),
+    }
+}
+
+impl From<&Palette> for PaletteDto {
+    fn from(p: &Palette) -> Self {
+        Self {
+            id: p.id().to_hex_string(),
+            name: p.name().as_str().to_owned(),
+            scope: scope_to_str(p.scope()).to_owned(),
+            colors: p.colors().iter().map(Color::to_hex_rgb).collect(),
+        }
+    }
 }
 
 #[cfg(test)]

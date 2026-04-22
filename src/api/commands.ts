@@ -232,3 +232,82 @@ export function getEditorState(): Promise<EditorStateDto> {
 export function getComposite(): Promise<CompositeDto> {
   return invoke("get_composite");
 }
+
+// --- Palette commands ---
+
+export type PaletteScopeDto = "global" | "project";
+
+export interface PaletteDto {
+  id: string;
+  name: string;
+  scope: PaletteScopeDto;
+  colors: string[];
+}
+
+export interface PaletteListDto {
+  palettes: PaletteDto[];
+  activePaletteId: string | null;
+  canCreateProjectPalette: boolean;
+}
+
+export interface AddColorResultDto {
+  added: boolean;
+  index: number;
+  palette: PaletteDto;
+}
+
+export type ImportStrategyDto =
+  | { action: "cancel" }
+  | { action: "rename"; newName: string }
+  | { action: "overwrite" };
+
+export function getPalettes(): Promise<PaletteListDto> {
+  return invoke("get_palettes");
+}
+
+export function setActivePalette(paletteId: string | null): Promise<PaletteListDto> {
+  return invoke("set_active_palette", { paletteId });
+}
+
+export function createPalette(
+  name: string,
+  scope: PaletteScopeDto,
+): Promise<PaletteListDto> {
+  return invoke("create_palette", { name, scope });
+}
+
+export function renamePalette(
+  paletteId: string,
+  newName: string,
+): Promise<PaletteListDto> {
+  return invoke("rename_palette", { paletteId, newName });
+}
+
+export function deletePalette(paletteId: string): Promise<PaletteListDto> {
+  return invoke("delete_palette", { paletteId });
+}
+
+export function addColorToActivePalette(colorHex: string): Promise<AddColorResultDto> {
+  return invoke("add_color_to_active_palette", { colorHex });
+}
+
+export function removeColorFromActivePaletteAt(index: number): Promise<PaletteListDto> {
+  return invoke("remove_color_from_active_palette_at", { index });
+}
+
+export function exportPalette(paletteId: string, destinationPath: string): Promise<void> {
+  return invoke("export_palette", { paletteId, destinationPath });
+}
+
+export function importPalette(
+  sourcePath: string,
+  scope: PaletteScopeDto,
+  strategy?: ImportStrategyDto,
+): Promise<PaletteListDto> {
+  return invoke("import_palette", { sourcePath, scope, strategy: strategy ?? null });
+}
+
+/** Dev stub — drives US3 until the project system lands. */
+export function setCurrentProjectPath(path: string | null): Promise<PaletteListDto> {
+  return invoke("set_current_project_path", { path });
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://texlab.dev/schemas/texpal-v1.json",
+  "title": "TexLab Palette File (.texpal)",
+  "description": "Canonical v1 schema for the shareable palette format used by the TexLab Palette panel (feature 011-palette-panel).",
+  "type": "object",
+  "required": ["version", "id", "name", "colors"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Schema version. Readers MUST reject any value other than 1."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "description": "Zero-padded 32-char hex representation of the palette UUIDv4. Preserved across renames."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "Human-readable palette name. Trimmed, NFC-normalized by readers; rejected if empty after trimming."
+    },
+    "colors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^#[0-9A-Fa-f]{6}$",
+        "description": "Opaque RGB color as a 7-character hex string."
+      },
+      "uniqueItems": false,
+      "description": "Ordered list of opaque RGB colors. Readers silently deduplicate, preserving the first occurrence of each color and emitting a warning log."
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "id": "2f0c1e4b8a1e4cfe9aab04d611ebbe49",
+      "name": "Nether Tones",
+      "colors": ["#3A1D1D", "#5E2B20", "#8A4A2E", "#C2733B"]
+    }
+  ]
+}

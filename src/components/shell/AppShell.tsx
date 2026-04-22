@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useCommandDispatcher } from "../../commands/dispatcher";
 import { initializeCommands } from "../../commands/index";
+import { initPaletteListener, usePaletteStore } from "../../store/paletteStore";
 import StatusBar from "../status-bar/StatusBar";
 import type { DockLayoutHandle } from "./DockLayout";
 import { DockLayout } from "./DockLayout";
@@ -12,6 +13,14 @@ initializeCommands();
 export function AppShell() {
   const dockRef = useRef<DockLayoutHandle>(null);
   useCommandDispatcher();
+
+  useEffect(() => {
+    initPaletteListener();
+    usePaletteStore
+      .getState()
+      .refreshState()
+      .catch(() => {});
+  }, []);
 
   return (
     <div

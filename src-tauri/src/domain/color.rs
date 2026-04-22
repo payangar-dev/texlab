@@ -1,3 +1,5 @@
+use crate::domain::error::DomainError;
+
 /// RGBA color value object.
 ///
 /// Each channel is a `u8` (0-255), making invalid values unrepresentable.
@@ -48,6 +50,36 @@ impl Color {
 
     pub fn a(&self) -> u8 {
         self.a
+    }
+
+    /// Parses an opaque `#RRGGBB` hex string into a `Color` with `a = 255`.
+    /// Case-insensitive. Rejects anything that is not exactly 7 bytes with a
+    /// leading `#` and six hex digits.
+    pub fn from_hex_rgb(raw: &str) -> Result<Self, DomainError> {
+        let bytes = raw.as_bytes();
+        if bytes.len() != 7 || bytes[0] != b'#' {
+            return Err(DomainError::InvalidInput {
+                reason: format!("expected \"#RRGGBB\", got {raw:?}"),
+            });
+        }
+        let parse = |i: usize| -> Result<u8, DomainError> {
+            u8::from_str_radix(&raw[i..i + 2], 16).map_err(|_| DomainError::InvalidInput {
+                reason: format!("invalid hex digits in {raw:?}"),
+            })
+        };
+        Ok(Self {
+            r: parse(1)?,
+            g: parse(3)?,
+            b: parse(5)?,
+            a: 255,
+        })
+    }
+
+    /// Formats this color as an uppercase `#RRGGBB` hex string.
+    /// Alpha is dropped — the palette layer is opaque-only (v1).
+    #[allow(clippy::wrong_self_convention)]
+    pub fn to_hex_rgb(&self) -> String {
+        format!("#{:02X}{:02X}{:02X}", self.r, self.g, self.b)
     }
 }
 
@@ -108,5 +140,51 @@ mod tests {
         set.insert(Color::new(10, 20, 30, 255));
         assert!(set.contains(&Color::new(10, 20, 30, 255)));
         assert!(!set.contains(&Color::new(10, 20, 30, 254)));
+    }
+
+    #[test]
+    fn from_hex_rgb_uppercase_roundtrip() {
+        let c = Color::from_hex_rgb("#1A2B3C").unwrap();
+        assert_eq!(c, Color::new(0x1A, 0x2B, 0x3C, 255));
+        assert_eq!(c.to_hex_rgb(), "#1A2B3C");
+    }
+
+    #[test]
+    fn from_hex_rgb_accepts_lowercase() {
+        let c = Color::from_hex_rgb("#abcdef").unwrap();
+        assert_eq!(c, Color::new(0xAB, 0xCD, 0xEF, 255));
+    }
+
+    #[test]
+    fn from_hex_rgb_forces_opaque_alpha() {
+        let c = Color::from_hex_rgb("#000000").unwrap();
+        assert_eq!(c.a(), 255);
+    }
+
+    #[test]
+    fn from_hex_rgb_rejects_missing_hash() {
+        let err = Color::from_hex_rgb("FFFFFF").unwrap_err();
+        assert!(matches!(err, DomainError::InvalidInput { .. }));
+    }
+
+    #[test]
+    fn from_hex_rgb_rejects_short_form() {
+        assert!(Color::from_hex_rgb("#FFF").is_err());
+    }
+
+    #[test]
+    fn from_hex_rgb_rejects_rgba_form() {
+        assert!(Color::from_hex_rgb("#FFFFFFFF").is_err());
+    }
+
+    #[test]
+    fn from_hex_rgb_rejects_non_hex() {
+        assert!(Color::from_hex_rgb("#GGGGGG").is_err());
+    }
+
+    #[test]
+    fn to_hex_rgb_drops_alpha() {
+        let c = Color::new(0x10, 0x20, 0x30, 0x40);
+        assert_eq!(c.to_hex_rgb(), "#102030");
     }
 }
