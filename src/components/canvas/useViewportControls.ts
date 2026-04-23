@@ -29,10 +29,10 @@ import type { CanvasRendererApi } from "./useCanvasRenderer";
 type InteractionMode = "idle" | "tool" | "pan";
 
 /**
- * Reads the composite pixel at (x, y) via IPC and appends its color to the
- * active palette. Used by palette pipette mode (FR-010). Called only when
- * `paletteStore.pipetteActive === true` so the extra getComposite round-trip
- * is bounded to explicit pipette clicks.
+ * Reads the composite pixel at (x, y) via IPC and appends its color to
+ * the active palette. Called only when `paletteStore.pipetteActive ===
+ * true` so the extra getComposite round-trip is bounded to explicit
+ * pipette clicks.
  */
 async function sampleCompositeAndAppend(x: number, y: number): Promise<void> {
   const composite = await getComposite();
@@ -187,10 +187,10 @@ export function useViewportControls(
         const { zoom, panX, panY } = useViewportStore.getState();
         const earlyPixel = pixelAtScreen(e.offsetX, e.offsetY, panX, panY, zoom);
 
-        // Palette pipette mode: sample the composite at the clicked pixel and
-        // append it to the active palette. Short-circuits the active tool
-        // (FR-010). The texture must be open, but we do NOT require an
-        // active layer since we sample the composite.
+        // Palette pipette mode: sample the composite at the clicked pixel
+        // and append it to the active palette. Short-circuits the active
+        // tool. The texture must be open, but we do NOT require an active
+        // layer since we sample the composite.
         if (usePaletteStore.getState().pipetteActive) {
           const { texture } = useEditorStore.getState();
           if (!texture) return;

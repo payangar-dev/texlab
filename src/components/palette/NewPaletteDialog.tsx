@@ -1,19 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { PaletteScopeDto } from "../../api/commands";
 import { colors, fontSizes, fonts } from "../../styles/theme";
+import { validatePaletteName } from "./paletteNameValidation";
 
 interface NewPaletteDialogProps {
   canCreateProjectPalette: boolean;
   onSubmit: (payload: { name: string; scope: PaletteScopeDto }) => void;
   onCancel: () => void;
-}
-
-function validateName(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (trimmed.length === 0) return "Name cannot be empty.";
-  if (trimmed !== raw) return "Leading or trailing whitespace is not allowed.";
-  if (Array.from(trimmed).length > 64) return "Name is too long (max 64 characters).";
-  return null;
 }
 
 export function NewPaletteDialog({
@@ -32,7 +25,7 @@ export function NewPaletteDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const err = validateName(name);
+    const err = validatePaletteName(name);
     if (err) {
       setError(err);
       return;

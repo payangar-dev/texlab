@@ -15,16 +15,13 @@ type ActionBarHandlers = {
   onDelete: () => void;
   onTogglePipette: () => void;
   onAddPrimary: () => void;
-  onSave?: () => void;
-  onLoad?: () => void;
+  onSave: () => void;
+  onLoad: () => void;
 };
 
 interface PaletteActionBarProps extends ActionBarHandlers {
   hasActivePalette: boolean;
   pipetteActive: boolean;
-  /** When false, the "Save"/"Load" actions still render but are disabled
-   *  (US4 enables them with real dialog wiring). */
-  saveLoadEnabled?: boolean;
 }
 
 export function PaletteActionBar({
@@ -37,7 +34,6 @@ export function PaletteActionBar({
   onAddPrimary,
   onSave,
   onLoad,
-  saveLoadEnabled = false,
 }: PaletteActionBarProps) {
   return (
     <div style={barStyle} role="toolbar" aria-label="Palette actions">
@@ -103,12 +99,9 @@ export function PaletteActionBar({
       <div style={separatorStyle} />
       <button
         type="button"
-        style={{
-          ...buttonStyle,
-          ...disabledIfStyle(!saveLoadEnabled || !hasActivePalette),
-        }}
+        style={{ ...buttonStyle, ...disabledIfStyle(!hasActivePalette) }}
         onClick={onSave}
-        disabled={!saveLoadEnabled || !hasActivePalette}
+        disabled={!hasActivePalette}
         title="Export palette to a .texpal file"
         aria-label="Save palette"
       >
@@ -116,9 +109,8 @@ export function PaletteActionBar({
       </button>
       <button
         type="button"
-        style={{ ...buttonStyle, ...disabledIfStyle(!saveLoadEnabled) }}
+        style={buttonStyle}
         onClick={onLoad}
-        disabled={!saveLoadEnabled}
         title="Import a palette from a .texpal file"
         aria-label="Load palette"
       >

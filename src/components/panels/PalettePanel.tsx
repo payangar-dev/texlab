@@ -47,13 +47,10 @@ export function PalettePanel(_props: IDockviewPanelProps) {
   const canCreateProjectPalette = usePaletteStore((s) => s.canCreateProjectPalette);
   const pipetteActive = usePaletteStore((s) => s.pipetteActive);
   const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
-  const [pulseIndex, setPulseIndex] = useState<number | null>(null);
+  const [pulse, setPulse] = useState<{ index: number; token: number } | null>(null);
 
   useEffect(() => {
-    usePaletteStore
-      .getState()
-      .refreshState()
-      .catch(() => {});
+    usePaletteStore.getState().refreshState();
   }, []);
 
   const activePalette = palettes.find((p) => p.id === activePaletteId) ?? null;
@@ -63,6 +60,7 @@ export function PalettePanel(_props: IDockviewPanelProps) {
       await setActivePalette(paletteId);
     } catch (err) {
       console.error("[PalettePanel] setActivePalette failed:", err);
+      showToast("Failed to switch palette.");
     }
   };
 
@@ -92,9 +90,15 @@ export function PalettePanel(_props: IDockviewPanelProps) {
     const hex = colorDtoToHex(primary);
     try {
       const result = await addColorToActivePalette(hex);
-      if (!result.added) setPulseIndex(result.index);
+      if (result.outcome.kind === "alreadyPresent") {
+        setPulse((prev) => ({
+          index: result.outcome.index,
+          token: (prev?.token ?? 0) + 1,
+        }));
+      }
     } catch (err) {
       console.error("[PalettePanel] addColorToActivePalette failed:", err);
+      showToast("Failed to add color to palette.");
     }
   };
 
@@ -132,20 +136,13 @@ export function PalettePanel(_props: IDockviewPanelProps) {
   const confirmDelete = async (paletteId: string) => {
     try {
       await deletePalette(paletteId);
+      setDialog({ kind: "none" });
     } catch (err) {
       console.error("[PalettePanel] deletePalette failed:", err);
-    } finally {
       setDialog({ kind: "none" });
+      showToast("Failed to delete palette.");
     }
   };
-
-  // Pulse cleanup — reset the index a tick after it is set so the grid
-  // only plays the animation once per add attempt.
-  useEffect(() => {
-    if (pulseIndex == null) return;
-    const t = window.setTimeout(() => setPulseIndex(null), 450);
-    return () => window.clearTimeout(t);
-  }, [pulseIndex]);
 
   const handleSave = async () => {
     if (!activePalette) return;
@@ -210,7 +207,6 @@ export function PalettePanel(_props: IDockviewPanelProps) {
       <PaletteActionBar
         hasActivePalette={activePalette !== null}
         pipetteActive={pipetteActive}
-        saveLoadEnabled
         onNew={handleNew}
         onRename={handleRename}
         onDelete={handleDelete}
@@ -234,7 +230,11 @@ export function PalettePanel(_props: IDockviewPanelProps) {
         (activePalette.colors.length === 0 ? (
           <div style={emptyStyle}>This palette has no swatches. Add colors above.</div>
         ) : (
-          <SwatchGrid colors={activePalette.colors} pulseIndex={pulseIndex} />
+          <SwatchGrid
+            colors={activePalette.colors}
+            pulseIndex={pulse?.index ?? null}
+            pulseToken={pulse?.token}
+          />
         ))}
 
       {dialog.kind === "new" && (
@@ -268,7 +268,6 @@ export function PalettePanel(_props: IDockviewPanelProps) {
       {dialog.kind === "importConflict" && (
         <ImportConflictDialog
           suggestedName={dialog.suggestedName}
-          onCancel={() => setDialog({ kind: "none" })}
           onStrategy={(strategy) => {
             if (strategy.action === "cancel") {
               setDialog({ kind: "none" });

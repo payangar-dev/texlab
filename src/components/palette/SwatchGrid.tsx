@@ -5,18 +5,19 @@ import { colorDtoToHex, hexToColorDto } from "../../utils/colorHex";
 
 interface SwatchGridProps {
   colors: string[];
-  /** Index of the swatch to briefly pulse (for FR-011 already-present
-   *  feedback). The caller resets this to `null` after the animation. */
+  /** Index of the swatch to briefly pulse. */
   pulseIndex?: number | null;
+  /** Increment to re-trigger the pulse on the same index. */
+  pulseToken?: number;
 }
 
 const PULSE_DURATION_MS = 400;
 
-/**
- * Grid of color tiles. Left-click → primary, right-click → secondary.
- * Right-click context menu is suppressed so only the color mutation fires.
- */
-export function SwatchGrid({ colors: swatches, pulseIndex }: SwatchGridProps) {
+export function SwatchGrid({
+  colors: swatches,
+  pulseIndex,
+  pulseToken,
+}: SwatchGridProps) {
   const activeColor = useToolStore((s) => s.activeColor);
   const secondaryColor = useToolStore((s) => s.secondaryColor);
 
@@ -37,7 +38,7 @@ export function SwatchGrid({ colors: swatches, pulseIndex }: SwatchGridProps) {
       el.classList.remove("texlab-swatch-pulse");
     }, PULSE_DURATION_MS);
     return () => window.clearTimeout(timer);
-  }, [pulseIndex]);
+  }, [pulseIndex, pulseToken]);
 
   if (swatches.length === 0) {
     return <div style={emptyStyle}>This palette has no swatches.</div>;

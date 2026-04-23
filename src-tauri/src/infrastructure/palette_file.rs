@@ -1,9 +1,6 @@
 //! `.texpal` codec — serde-powered JSON read/write for palette files.
 //!
-//! Contract: see `specs/011-palette-panel/contracts/texpal-schema.json`.
-//!
-//! The codec is exposed to `use_cases/` only via the [`PaletteCodec`] port;
-//! use-cases never import from this module directly (Principle I).
+//! Exposed to `use_cases/` only via the [`PaletteCodec`] port.
 
 use serde::{Deserialize, Serialize};
 
@@ -39,9 +36,9 @@ pub fn encode(palette: &Palette) -> Result<String, DomainError> {
     })
 }
 
-/// Parses a `.texpal` payload. `scope` is supplied by the caller because the
-/// file does not encode scope (scope is derived from the directory that
-/// holds the file — research.md §1).
+/// Parses a `.texpal` payload. `scope` is supplied by the caller because
+/// the file does not encode it (scope is derived from the directory that
+/// holds the file).
 pub fn decode(raw: &str, scope: PaletteScope) -> Result<Palette, DomainError> {
     let file: TexpalFile = serde_json::from_str(raw).map_err(|e| rule(format!("parse:{e}")))?;
 

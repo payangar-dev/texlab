@@ -1,12 +1,11 @@
 //! Codec + atomic writer for `<app_data_dir>/palette-state.json`.
 //!
-//! Holds the active-palette memory used by [`PaletteService`] to implement
-//! FR-023a (remember-last-selection per context). Corrupt or missing files
-//! recover to an empty memory — losing the restore feature is not fatal.
+//! Holds the active-palette memory (last-selected palette per context).
+//! Corrupt or missing files recover to an empty memory — losing the
+//! restore feature is not fatal.
 //!
 //! The module exposes [`FsActiveMemoryStore`], the default implementation
-//! of the [`ActiveMemoryStore`] port. Use-cases depend on the port, not
-//! on this module (Principle I).
+//! of the [`ActiveMemoryStore`] port.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};

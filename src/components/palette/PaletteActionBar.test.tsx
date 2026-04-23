@@ -20,7 +20,6 @@ function renderBar(
     <PaletteActionBar
       hasActivePalette
       pipetteActive={false}
-      saveLoadEnabled
       {...handlers}
       {...overrides}
     />,
@@ -57,13 +56,13 @@ describe("PaletteActionBar", () => {
     expect(btn.getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("disables Save/Load when saveLoadEnabled is false", () => {
-    renderBar({ saveLoadEnabled: false });
+  it("disables Save when no active palette but leaves Load enabled", () => {
+    renderBar({ hasActivePalette: false });
     expect((screen.getByLabelText("Save palette") as HTMLButtonElement).disabled).toBe(
       true,
     );
     expect((screen.getByLabelText("Load palette") as HTMLButtonElement).disabled).toBe(
-      true,
+      false,
     );
   });
 });

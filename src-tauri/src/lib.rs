@@ -30,7 +30,12 @@ pub fn run() {
                 .app_data_dir()
                 .map_err(|e| format!("app_data_dir resolution failed: {e}"))?;
             let palettes_root = app_data_dir.join("palettes");
-            std::fs::create_dir_all(&app_data_dir).ok();
+            if let Err(e) = std::fs::create_dir_all(&app_data_dir) {
+                eprintln!(
+                    "[lib] failed to create app_data_dir {}: {e}",
+                    app_data_dir.display()
+                );
+            }
             let global_store = Box::new(FilesystemPaletteStore::new(
                 palettes_root,
                 PaletteScope::Global,

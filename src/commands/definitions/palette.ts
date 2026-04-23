@@ -2,16 +2,11 @@ import { removeColorFromActivePaletteAt } from "../../api/commands";
 import { usePaletteStore } from "../../store/paletteStore";
 import { useToolStore } from "../../store/toolStore";
 import { colorDtoToHex } from "../../utils/colorHex";
+import { showToast } from "../../utils/toast";
 import { commandRegistry } from "../commandRegistry";
 import { keybindingRegistry } from "../keybindingRegistry";
 
 export function registerPaletteCommands(): void {
-  /**
-   * Delete the swatch that equals the active primary color (FR-012). No-op
-   * if the primary does not match any swatch. Uses the existing palette
-   * state already mirrored in the store — no extra backend round-trip to
-   * resolve the index.
-   */
   commandRegistry.registerCommand({
     id: "palette.deleteActiveSwatch",
     label: "Delete active swatch",
@@ -30,17 +25,13 @@ export function registerPaletteCommands(): void {
       const hex = colorDtoToHex(primary);
       const index = active.colors.findIndex((c) => c.toUpperCase() === hex);
       if (index < 0) return;
-      removeColorFromActivePaletteAt(index).catch((err) =>
-        console.error("[palette.deleteActiveSwatch] failed:", err),
-      );
+      removeColorFromActivePaletteAt(index).catch((err) => {
+        console.error("[palette.deleteActiveSwatch] failed:", err);
+        showToast("Failed to delete swatch.");
+      });
     },
   });
 
-  /**
-   * Exit pipette mode (FR-010 alternative exit path). Gated on the pipette
-   * being active so Escape remains available for other consumers when not
-   * pipetting.
-   */
   commandRegistry.registerCommand({
     id: "palette.exitPipette",
     label: "Exit palette pipette mode",

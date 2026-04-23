@@ -25,9 +25,7 @@ pub use color::Color;
 pub use error::DomainError;
 pub use layer::{Layer, LayerId};
 pub use layer_stack::LayerStack;
-pub use palette::{
-    ActiveMemory, AddColorOutcome, Palette, PaletteId, PaletteName, PaletteScope, Swatch,
-};
+pub use palette::{ActiveMemory, AddColorOutcome, Palette, PaletteId, PaletteName, PaletteScope};
 pub use pixel_buffer::PixelBuffer;
 pub use ports::{
     ActiveMemoryStore, ImageReader, ImageWriter, PackScanner, PaletteCodec, PaletteStore,

@@ -250,9 +250,12 @@ export interface PaletteListDto {
   canCreateProjectPalette: boolean;
 }
 
+export type AddColorOutcomeDto =
+  | { kind: "added"; index: number }
+  | { kind: "alreadyPresent"; index: number };
+
 export interface AddColorResultDto {
-  added: boolean;
-  index: number;
+  outcome: AddColorOutcomeDto;
   palette: PaletteDto;
 }
 
@@ -307,7 +310,8 @@ export function importPalette(
   return invoke("import_palette", { sourcePath, scope, strategy: strategy ?? null });
 }
 
-/** Dev stub — drives US3 until the project system lands. */
+/** Dev stub: swaps the project palette store in/out. Replaced once the
+ *  project subsystem lands. */
 export function setCurrentProjectPath(path: string | null): Promise<PaletteListDto> {
   return invoke("set_current_project_path", { path });
 }

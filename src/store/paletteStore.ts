@@ -2,6 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import type { PaletteDto, PaletteListDto } from "../api/commands";
 import { getPalettes } from "../api/commands";
+import { showToast } from "../utils/toast";
 import { useToolStore } from "./toolStore";
 
 interface PaletteStoreState {
@@ -30,6 +31,7 @@ export const usePaletteStore = create<PaletteStoreState>((set, get) => ({
       });
     } catch (err) {
       console.error("[paletteStore] failed to refresh state:", err);
+      showToast("Failed to load palettes.");
     }
   },
 
@@ -47,9 +49,8 @@ let toolStoreSubscribed = false;
 
 /**
  * Installs the `state-changed` listener and a tool-store subscription that
- * exits pipette mode whenever the user switches to a drawing tool (US2
- * FR-010 exit path). Idempotent — safe to call from `AppShell` alongside
- * `initEditorListener`.
+ * exits pipette mode whenever the user switches to a drawing tool.
+ * Idempotent — safe to call more than once.
  */
 export function initPaletteListener(): void {
   if (!listenerInitialized) {

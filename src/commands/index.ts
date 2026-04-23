@@ -11,10 +11,9 @@ const registrations = [
   registerToolCommands,
   registerEditCommands,
   registerViewCommands,
-  // Palette must register before layers so its Delete keybinding wins
-  // per FR-012 (delete-swatch is the v1 semantics for Delete — see
-  // research.md §7). Layer delete remains available via the panel's
-  // trash button.
+  // Palette registers before layers so palette's Delete keybinding wins
+  // — the v1 Delete shortcut removes the active swatch; layer deletion
+  // stays available via the panel's trash button.
   registerPaletteCommands,
   registerLayerCommands,
   registerLayoutCommands,

@@ -2,16 +2,18 @@
 //!
 //! All mutating commands emit `state-changed` so the frontend `paletteStore`
 //! refetches. The service exposes `Result<_, DomainError>`; this layer
-//! translates into the `AppError` codes documented in
-//! `specs/011-palette-panel/contracts/commands.md`.
+//! translates into the stable `AppError` codes consumed by the frontend
+//! error classifier.
 
 use std::path::PathBuf;
 use std::sync::Mutex;
 
 use tauri::{AppHandle, State};
+use uuid::Uuid;
 
 use crate::commands::dto::{
-    str_to_scope, AddColorResultDto, ImportStrategyDto, PaletteDto, PaletteListDto,
+    AddColorOutcomeDto, AddColorResultDto, ImportStrategyDto, PaletteDto, PaletteListDto,
+    PaletteScopeDto,
 };
 use crate::commands::emit_state_changed;
 use crate::domain::{AddColorOutcome, Color, DomainError, PaletteId, PaletteScope};
@@ -19,9 +21,13 @@ use crate::error::AppError;
 use crate::state::AppState;
 use crate::use_cases::palette_service::{ImportStrategy, PaletteService};
 
+fn new_palette_id() -> PaletteId {
+    PaletteId::from_value(Uuid::new_v4().as_u128())
+}
+
 /// Translates a [`DomainError`] returned by `PaletteService` into an
-/// [`AppError`] whose serialized string matches the error catalogue in
-/// `contracts/commands.md`.
+/// [`AppError`] whose serialized string matches the stable error catalogue
+/// consumed by the frontend classifier.
 fn translate(err: DomainError) -> AppError {
     match err {
         DomainError::RuleViolation(code) => AppError::Validation(code),
@@ -98,15 +104,15 @@ pub fn create_palette(
     app: AppHandle,
     state: State<'_, Mutex<AppState>>,
     name: String,
-    scope: String,
+    scope: PaletteScopeDto,
 ) -> Result<PaletteListDto, AppError> {
-    let scope = str_to_scope(&scope)?;
     let mut state = state
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
+    let id = new_palette_id();
     state
         .palette_service_mut()?
-        .create_palette(&name, scope)
+        .create_palette(id, &name, scope.into())
         .map_err(translate)?;
     let dto = build_palette_list_dto(state.palette_service_ref()?)?;
     emit_state_changed(&app);
@@ -166,13 +172,12 @@ pub fn add_color_to_active_palette(
         .palette_service_mut()?
         .add_color_to_active(color)
         .map_err(translate)?;
-    let (added, index) = match outcome {
-        AddColorOutcome::Added { index } => (true, index),
-        AddColorOutcome::AlreadyPresent { index } => (false, index),
+    let outcome = match outcome {
+        AddColorOutcome::Added { index } => AddColorOutcomeDto::Added { index },
+        AddColorOutcome::AlreadyPresent { index } => AddColorOutcomeDto::AlreadyPresent { index },
     };
     let dto = AddColorResultDto {
-        added,
-        index,
+        outcome,
         palette: PaletteDto::from(&palette),
     };
     emit_state_changed(&app);
@@ -219,34 +224,34 @@ pub fn import_palette(
     app: AppHandle,
     state: State<'_, Mutex<AppState>>,
     source_path: String,
-    scope: String,
+    scope: PaletteScopeDto,
     strategy: Option<ImportStrategyDto>,
 ) -> Result<PaletteListDto, AppError> {
-    let scope = str_to_scope(&scope)?;
     let strategy = strategy.map(|s| match s {
         ImportStrategyDto::Cancel => ImportStrategy::Cancel,
-        ImportStrategyDto::Rename { new_name } => ImportStrategy::Rename { new_name },
+        ImportStrategyDto::Rename { new_name } => ImportStrategy::Rename {
+            new_name,
+            fresh_id: new_palette_id(),
+        },
         ImportStrategyDto::Overwrite => ImportStrategy::Overwrite,
     });
 
     let mut state = state
         .lock()
         .map_err(|_| AppError::Internal("state lock poisoned".into()))?;
-    let cancelled = matches!(strategy, Some(ImportStrategy::Cancel));
     let outcome = state
         .palette_service_mut()?
-        .import_palette(std::path::Path::new(&source_path), scope, strategy)
+        .import_palette(std::path::Path::new(&source_path), scope.into(), strategy)
         .map_err(translate)?;
     let dto = build_palette_list_dto(state.palette_service_ref()?)?;
-    if outcome.is_some() && !cancelled {
+    if outcome.is_some() {
         emit_state_changed(&app);
     }
     Ok(dto)
 }
 
-/// Dev stub until the project subsystem lands (research.md §10). Updates
-/// `AppState.current_project_path` and swaps in/out the project store so the
-/// rest of the palette commands exercise US3 manually.
+/// Dev stub: updates `AppState.current_project_path` and swaps the
+/// project palette store in/out. Replaced once the project subsystem lands.
 #[tauri::command]
 pub fn set_current_project_path(
     app: AppHandle,
@@ -279,4 +284,50 @@ pub fn set_current_project_path(
     let dto = build_palette_list_dto(state.palette_service_ref()?)?;
     emit_state_changed(&app);
     Ok(dto)
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    // The stable error-code prefixes below are a contract with the frontend
+    // classifier (`src/api/paletteErrors.ts`). Do not change them without
+    // updating both sides.
+
+    #[test]
+    fn translate_rule_violation_preserves_code() {
+        let e = translate(DomainError::RuleViolation("duplicate-palette-name".into()));
+        assert_eq!(e.to_string(), "duplicate-palette-name");
+    }
+
+    #[test]
+    fn translate_io_error_prefixes_with_io_error() {
+        let e = translate(DomainError::IoError {
+            reason: "disk full".into(),
+        });
+        assert!(e.to_string().starts_with("io-error:"), "got {e}");
+        assert!(e.to_string().contains("disk full"));
+    }
+
+    #[test]
+    fn translate_invalid_index_yields_palette_index_out_of_range() {
+        let e = translate(DomainError::InvalidIndex { index: 5, len: 2 });
+        assert_eq!(e.to_string(), "palette-index-out-of-range");
+    }
+
+    #[test]
+    fn translate_invalid_input_prefixes_with_invalid_input() {
+        let e = translate(DomainError::InvalidInput {
+            reason: "bad".into(),
+        });
+        assert!(e.to_string().starts_with("invalid-input:"), "got {e}");
+    }
+
+    #[test]
+    fn new_palette_id_is_random() {
+        let a = new_palette_id();
+        let b = new_palette_id();
+        assert_ne!(a, b);
+    }
 }

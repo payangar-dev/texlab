@@ -14,17 +14,9 @@ use crate::domain::error::DomainError;
 /// Maximum palette name length in Unicode scalar values (chars).
 const PALETTE_NAME_MAX_CHARS: usize = 64;
 
-/// Palette name value object — trimmed, NFC-ish, 1..=64 chars, non-empty,
-/// non-whitespace-only.
-///
-/// NFC normalization: we do not import `unicode-normalization` to keep the
-/// domain `std`-only. Instead we reject names that contain characters which
-/// typically vary across forms (combining marks) by leaving them intact —
-/// uniqueness comparison happens by exact string match after trimming, which
-/// is a conservative approximation of NFC behavior for practical palette
-/// names. If two users type the same-looking name with different composition
-/// forms, they remain distinct palettes; this matches the conservative
-/// clarification in research.md §4.
+/// Palette name value object — 1..=64 Unicode chars, non-empty, not
+/// whitespace-only, and no leading/trailing whitespace (rejected, not
+/// trimmed). Equality is exact string match (no Unicode normalization).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PaletteName(String);
 
@@ -102,32 +94,15 @@ pub enum PaletteScope {
     Project,
 }
 
-/// Named concept for a palette color entry. Wraps [`Color`] so future
-/// per-swatch metadata (tags, notes) can be added without churning callers.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct Swatch {
-    color: Color,
-}
-
-impl Swatch {
-    pub fn new(color: Color) -> Self {
-        Self { color }
-    }
-
-    pub fn color(&self) -> Color {
-        self.color
-    }
-}
-
-/// Outcome of [`Palette::add_color`]. See FR-011.
+/// Outcome of [`Palette::add_color`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AddColorOutcome {
     Added { index: usize },
     AlreadyPresent { index: usize },
 }
 
-/// Named, ordered, no-duplicates color list. Scope is fixed for the lifetime
-/// of the entity (Clarification 2026-04-22 Q7).
+/// Named, ordered, no-duplicates color list. Scope is fixed for the
+/// lifetime of the entity — there is no `set_scope` to move palettes.
 #[derive(Clone, Debug)]
 pub struct Palette {
     id: PaletteId,
@@ -147,9 +122,8 @@ impl Palette {
     }
 
     /// Rebuilds a palette from persisted fields, used by the file codec.
-    /// Deduplicates colors preserving first occurrence (FR-011 invariant +
-    /// research.md §2 — silent dedupe on read with a warning logged by the
-    /// codec, not here).
+    /// Silently deduplicates colors (preserving first occurrence) and
+    /// forces alpha to 255 — palette swatches are opaque-only.
     pub fn from_parts(
         id: PaletteId,
         name: PaletteName,
@@ -197,7 +171,7 @@ impl Palette {
 
     /// Appends a color at the end, forcing `a = 255`. Returns
     /// [`AddColorOutcome::AlreadyPresent`] with the existing index when the
-    /// color is already in the palette (FR-011).
+    /// color is already in the palette.
     pub fn add_color(&mut self, color: Color) -> AddColorOutcome {
         let opaque = Color::new(color.r(), color.g(), color.b(), 255);
         if let Some(index) = self.colors.iter().position(|c| *c == opaque) {
@@ -219,8 +193,8 @@ impl Palette {
         Ok(self.colors.remove(index))
     }
 
-    /// Removes the first swatch whose RGB equals the given color. Returns the
-    /// removed index. Used by the Delete-key flow (FR-012).
+    /// Removes the first swatch whose RGB equals the given color. Returns
+    /// the removed index.
     pub fn remove_color(&mut self, color: Color) -> Result<usize, DomainError> {
         let opaque = Color::new(color.r(), color.g(), color.b(), 255);
         match self.colors.iter().position(|c| *c == opaque) {
@@ -239,9 +213,10 @@ impl Palette {
     }
 }
 
-/// Per-context active-palette memory (FR-023a). Persistence lives behind
-/// the [`crate::domain::ports::ActiveMemoryStore`] port; this struct is
-/// the domain's view.
+/// Per-context active-palette memory (remembers the last-selected palette
+/// per project plus a global fallback). Persistence lives behind the
+/// [`crate::domain::ports::ActiveMemoryStore`] port; this struct is the
+/// domain's view.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ActiveMemory {
     pub global: Option<PaletteId>,
@@ -436,14 +411,6 @@ mod tests {
             ],
         );
         assert_eq!(p.len(), 2);
-    }
-
-    // --- Swatch ---
-
-    #[test]
-    fn swatch_wraps_color() {
-        let s = Swatch::new(Color::new(1, 2, 3, 255));
-        assert_eq!(s.color(), Color::new(1, 2, 3, 255));
     }
 
     // --- AddColorOutcome ---

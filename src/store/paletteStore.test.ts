@@ -9,6 +9,11 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: (...args: unknown[]) => mockListen(...args),
 }));
 
+const mockShowToast = vi.fn();
+vi.mock("../utils/toast", () => ({
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}));
+
 import { invoke } from "@tauri-apps/api/core";
 import type { PaletteListDto } from "../api/commands";
 import { initPaletteListener, usePaletteStore } from "./paletteStore";
@@ -63,11 +68,21 @@ describe("paletteStore.refreshState", () => {
     expect(state.activePaletteId).toBeNull();
   });
 
-  it("swallows and logs IPC errors", async () => {
+  it("logs and toasts on IPC failure without mutating state", async () => {
+    usePaletteStore.setState({
+      palettes: [{ id: "aa", name: "X", scope: "global", colors: [] }],
+      activePaletteId: "aa",
+    });
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     mockedInvoke.mockRejectedValueOnce(new Error("boom"));
+
     await usePaletteStore.getState().refreshState();
+
     expect(spy).toHaveBeenCalled();
+    expect(mockShowToast).toHaveBeenCalledWith("Failed to load palettes.");
+    const state = usePaletteStore.getState();
+    expect(state.palettes).toHaveLength(1);
+    expect(state.activePaletteId).toBe("aa");
     spy.mockRestore();
   });
 });

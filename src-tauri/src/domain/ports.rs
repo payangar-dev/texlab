@@ -38,9 +38,9 @@ pub trait PaletteStore {
     fn delete(&self, id: PaletteId) -> Result<(), DomainError>;
 }
 
-/// Port for persisting [`ActiveMemory`] (per-context active-palette
-/// restore — FR-023a). The on-disk shape lives in infrastructure; this
-/// trait keeps `use_cases/` free of file-format knowledge.
+/// Port for persisting [`ActiveMemory`] (last-active palette per context).
+/// The on-disk shape lives in infrastructure; this trait keeps
+/// `use_cases/` free of file-format knowledge.
 pub trait ActiveMemoryStore {
     fn load(&self) -> Result<ActiveMemory, DomainError>;
     fn save(&self, memory: &ActiveMemory) -> Result<(), DomainError>;

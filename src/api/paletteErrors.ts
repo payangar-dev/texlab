@@ -1,8 +1,8 @@
 /**
- * Centralized classifier for palette-related `AppError::Validation` payloads.
- * The Rust side encodes each error as a stable `<kind>[:<arg>...]` string
- * (see `specs/011-palette-panel/contracts/commands.md`), which means the
- * frontend can pattern-match without regex gymnastics.
+ * Centralized classifier for palette-related `AppError::Validation`
+ * payloads. The Rust side encodes each error as a stable
+ * `<kind>[:<arg>...]` string so the frontend can pattern-match without
+ * regex gymnastics.
  */
 
 export type PaletteErrorKind =

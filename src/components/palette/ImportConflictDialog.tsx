@@ -5,18 +5,8 @@ import { colors, fontSizes, fonts } from "../../styles/theme";
 interface ImportConflictDialogProps {
   suggestedName: string;
   onStrategy: (strategy: ImportStrategyDto) => void;
-  // `onCancel` is accepted for API symmetry with the other dialogs; this
-  // dialog routes cancellation through onStrategy({action:"cancel"}) so
-  // callers see a uniform surface. Kept in props to avoid forcing callers
-  // to branch on dialog type just to forget a prop.
-  onCancel?: () => void;
 }
 
-/**
- * Three-action dialog for FR-020a. *Rename* is the default action (focused
- * on mount), with the suggested name editable. *Overwrite* replaces the
- * existing palette's content in place. *Cancel* is a no-op.
- */
 export function ImportConflictDialog({
   suggestedName,
   onStrategy,

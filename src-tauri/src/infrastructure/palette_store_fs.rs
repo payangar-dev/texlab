@@ -1,9 +1,9 @@
 //! Filesystem-backed [`PaletteStore`] implementation.
 //!
-//! Each palette lives as a single `.texpal` file under a directory bound to a
-//! scope (global = `<app_data_dir>/palettes/`, project =
+//! Each palette lives as a single `.texpal` file under a directory bound
+//! to a scope (global = `<app_data_dir>/palettes/`, project =
 //! `<project>/palettes/`). The basename is derived from the palette name
-//! using the sanitization rules in research.md §5.
+//! via [`sanitize_basename`].
 //!
 //! Errors are mapped into [`DomainError`] so the port contract stays pure.
 
@@ -34,17 +34,27 @@ impl FilesystemPaletteStore {
     }
 
     /// Returns all entries in the store directory (may be empty). Missing
-    /// directory is treated as an empty store.
+    /// directory is treated as an empty store. Unreadable entries are
+    /// logged and skipped so a single bad file doesn't hide the rest.
     fn list_dir(&self) -> Result<Vec<PathBuf>, DomainError> {
         if !self.root.exists() {
             return Ok(Vec::new());
         }
-        let mut entries: Vec<PathBuf> = std::fs::read_dir(&self.root)
-            .map_err(io_err)?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().and_then(|s| s.to_str()) == Some(EXTENSION))
-            .collect();
+        let mut entries = Vec::new();
+        for entry in std::fs::read_dir(&self.root).map_err(io_err)? {
+            match entry {
+                Ok(e) => {
+                    let p = e.path();
+                    if p.extension().and_then(|s| s.to_str()) == Some(EXTENSION) {
+                        entries.push(p);
+                    }
+                }
+                Err(e) => eprintln!(
+                    "[palette_store_fs] skipped unreadable entry in {}: {e}",
+                    self.root.display()
+                ),
+            }
+        }
         entries.sort();
         Ok(entries)
     }
@@ -53,8 +63,8 @@ impl FilesystemPaletteStore {
         let base = sanitize_basename(palette.name().as_str());
         let mut candidate = self.root.join(format!("{base}.{EXTENSION}"));
 
-        // If a file already exists for a *different* id, suffix with first 8
-        // hex chars of this palette's id (research.md §5).
+        // If a file already exists for a *different* id, suffix with the
+        // first 8 hex chars of this palette's id to keep both on disk.
         if candidate.exists() {
             if let Ok(existing) = read_palette(&candidate, self.scope) {
                 if existing.id() == palette.id() {
@@ -69,10 +79,13 @@ impl FilesystemPaletteStore {
 
     fn find_existing_path(&self, id: PaletteId) -> Result<Option<PathBuf>, DomainError> {
         for path in self.list_dir()? {
-            if let Ok(p) = read_palette(&path, self.scope) {
-                if p.id() == id {
-                    return Ok(Some(path));
-                }
+            match read_palette(&path, self.scope) {
+                Ok(p) if p.id() == id => return Ok(Some(path)),
+                Ok(_) => {}
+                Err(e) => eprintln!(
+                    "[palette_store_fs] skipped unreadable palette {}: {e}",
+                    path.display()
+                ),
             }
         }
         Ok(None)
@@ -92,13 +105,10 @@ fn read_palette(path: &Path, scope: PaletteScope) -> Result<Palette, DomainError
     })
 }
 
-/// Applies the filename sanitization rules from research.md §5:
-///   1. NFC-normalize (we skip the full lib; practical palette names are
-///      mostly BMP scripts so a conservative passthrough is OK).
-///   2. Replace reserved chars (`< > : " / \ | ? *` + ASCII controls + NUL)
-///      with `_`.
-///   3. Trim trailing dots and spaces (Windows).
-///   4. If empty, fall back to `palette`.
+/// Derives a Windows/NTFS-safe filesystem basename from a palette name.
+/// Replaces reserved chars (`< > : " / \ | ? *` + ASCII controls + NUL)
+/// with `_`, trims trailing dots and spaces, and falls back to `palette`
+/// if the result is empty. No Unicode normalization is applied.
 pub fn sanitize_basename(name: &str) -> String {
     let mut out = String::with_capacity(name.len());
     for ch in name.chars() {
@@ -120,11 +130,16 @@ pub fn sanitize_basename(name: &str) -> String {
 
 impl PaletteStore for FilesystemPaletteStore {
     fn list(&self) -> Result<Vec<Palette>, DomainError> {
-        let mut palettes: Vec<Palette> = self
-            .list_dir()?
-            .iter()
-            .filter_map(|path| read_palette(path, self.scope).ok())
-            .collect();
+        let mut palettes = Vec::new();
+        for path in self.list_dir()? {
+            match read_palette(&path, self.scope) {
+                Ok(p) => palettes.push(p),
+                Err(e) => eprintln!(
+                    "[palette_store_fs] skipped unreadable palette {}: {e}",
+                    path.display()
+                ),
+            }
+        }
         palettes.sort_by(|a, b| a.name().as_str().cmp(b.name().as_str()));
         Ok(palettes)
     }
