@@ -1,4 +1,5 @@
 use super::error::DomainError;
+use super::palette::{ActiveMemory, Palette, PaletteId, PaletteScope};
 use super::pixel_buffer::PixelBuffer;
 
 /// Texture entry discovered when scanning a resource pack.
@@ -26,11 +27,102 @@ pub trait PackScanner {
     fn scan(&self, path: &str) -> Result<Vec<TextureEntry>, DomainError>;
 }
 
+/// Port for palette CRUD in a single scope (global directory or project
+/// directory). Rename is intentionally absent — `PaletteService`
+/// implements rename as read→write→delete to keep adapters minimal.
+/// Object-safe: `Box<dyn PaletteStore + Send + Sync>` in `PaletteService`.
+pub trait PaletteStore {
+    fn list(&self) -> Result<Vec<Palette>, DomainError>;
+    fn read(&self, id: PaletteId) -> Result<Palette, DomainError>;
+    fn write(&self, palette: &Palette) -> Result<(), DomainError>;
+    fn delete(&self, id: PaletteId) -> Result<(), DomainError>;
+}
+
+/// Port for persisting [`ActiveMemory`] (last-active palette per context).
+/// The on-disk shape lives in infrastructure; this trait keeps
+/// `use_cases/` free of file-format knowledge.
+pub trait ActiveMemoryStore {
+    fn load(&self) -> Result<ActiveMemory, DomainError>;
+    fn save(&self, memory: &ActiveMemory) -> Result<(), DomainError>;
+}
+
+/// Port for the `.texpal` codec. Used by `PaletteService::export_palette`
+/// and `import_palette`, where serialization must happen outside of any
+/// `PaletteStore` because the path is user-chosen. Infrastructure owns
+/// the actual JSON shape.
+pub trait PaletteCodec {
+    fn encode(&self, palette: &Palette) -> Result<String, DomainError>;
+    fn decode(&self, raw: &str, scope: PaletteScope) -> Result<Palette, DomainError>;
+}
+
+/// In-memory [`PaletteStore`] used across the test suite. Exposes the
+/// underlying `Vec` so tests can simulate out-of-band file edits.
+#[cfg(test)]
+pub struct HashMapPaletteStore {
+    palettes: std::sync::Mutex<Vec<Palette>>,
+}
+
+#[cfg(test)]
+#[allow(dead_code)]
+impl HashMapPaletteStore {
+    pub fn new() -> Self {
+        Self {
+            palettes: std::sync::Mutex::new(Vec::new()),
+        }
+    }
+
+    pub fn seed(&self, palette: Palette) {
+        self.palettes.lock().expect("lock").push(palette);
+    }
+}
+
+#[cfg(test)]
+impl PaletteStore for HashMapPaletteStore {
+    fn list(&self) -> Result<Vec<Palette>, DomainError> {
+        Ok(self.palettes.lock().expect("lock").clone())
+    }
+
+    fn read(&self, id: PaletteId) -> Result<Palette, DomainError> {
+        self.palettes
+            .lock()
+            .expect("lock")
+            .iter()
+            .find(|p| p.id() == id)
+            .cloned()
+            .ok_or(DomainError::InvalidInput {
+                reason: format!("palette {:?} not found", id.to_hex_string()),
+            })
+    }
+
+    fn write(&self, palette: &Palette) -> Result<(), DomainError> {
+        let mut list = self.palettes.lock().expect("lock");
+        if let Some(pos) = list.iter().position(|p| p.id() == palette.id()) {
+            list[pos] = palette.clone();
+        } else {
+            list.push(palette.clone());
+        }
+        Ok(())
+    }
+
+    fn delete(&self, id: PaletteId) -> Result<(), DomainError> {
+        let mut list = self.palettes.lock().expect("lock");
+        let before = list.len();
+        list.retain(|p| p.id() != id);
+        if list.len() == before {
+            return Err(DomainError::InvalidInput {
+                reason: format!("palette {:?} not found", id.to_hex_string()),
+            });
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::domain::color::Color;
+    use crate::domain::palette::{PaletteName, PaletteScope};
 
     struct MockImageReader;
 
@@ -168,5 +260,37 @@ mod tests {
             path: "textures/block/stone.png".into(),
         });
         assert_eq!(set.len(), 1);
+    }
+
+    #[test]
+    fn in_memory_store_roundtrip() {
+        let store = HashMapPaletteStore::new();
+        let id = PaletteId::from_value(1);
+        let p = Palette::new(id, PaletteName::new("Blues").unwrap(), PaletteScope::Global);
+        store.write(&p).unwrap();
+        let got = store.read(id).unwrap();
+        assert_eq!(got.name().as_str(), "Blues");
+        assert_eq!(store.list().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn in_memory_store_delete() {
+        let store = HashMapPaletteStore::new();
+        let id = PaletteId::from_value(42);
+        store
+            .write(&Palette::new(
+                id,
+                PaletteName::new("A").unwrap(),
+                PaletteScope::Global,
+            ))
+            .unwrap();
+        store.delete(id).unwrap();
+        assert!(store.read(id).is_err());
+    }
+
+    #[test]
+    fn in_memory_store_delete_missing_errors() {
+        let store = HashMapPaletteStore::new();
+        assert!(store.delete(PaletteId::from_value(99)).is_err());
     }
 }

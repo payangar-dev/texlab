@@ -1,10 +1,18 @@
 import { useEffect, useRef } from "react";
-import { type ToolResultDto, toolDrag, toolPress, toolRelease } from "../../api/commands";
+import {
+  addColorToActivePalette,
+  getComposite,
+  type ToolResultDto,
+  toolDrag,
+  toolPress,
+  toolRelease,
+} from "../../api/commands";
 import crosshairSvg from "../../assets/cursors/crosshair.svg?raw";
 import moveSvg from "../../assets/cursors/move.svg?raw";
 import paintBucketSvg from "../../assets/cursors/paint-bucket.svg?raw";
 import pipetteSvg from "../../assets/cursors/pipette.svg?raw";
 import zoomInSvg from "../../assets/cursors/zoom-in.svg?raw";
+import { usePaletteStore } from "../../store/paletteStore";
 
 function svgCursor(svg: string, hotX: number, hotY: number, fallback: string): string {
   return `url('data:image/svg+xml,${encodeURIComponent(svg)}') ${hotX} ${hotY}, ${fallback}`;
@@ -19,6 +27,24 @@ import { isInBounds, pixelAtScreen } from "./math";
 import type { CanvasRendererApi } from "./useCanvasRenderer";
 
 type InteractionMode = "idle" | "tool" | "pan";
+
+/**
+ * Reads the composite pixel at (x, y) via IPC and appends its color to
+ * the active palette. Called only when `paletteStore.pipetteActive ===
+ * true` so the extra getComposite round-trip is bounded to explicit
+ * pipette clicks.
+ */
+async function sampleCompositeAndAppend(x: number, y: number): Promise<void> {
+  const composite = await getComposite();
+  const index = (y * composite.width + x) * 4;
+  const r = composite.data[index] ?? 0;
+  const g = composite.data[index + 1] ?? 0;
+  const b = composite.data[index + 2] ?? 0;
+  const hex = `#${[r, g, b]
+    .map((n) => n.toString(16).padStart(2, "0").toUpperCase())
+    .join("")}`;
+  await addColorToActivePalette(hex);
+}
 
 const NON_DRAWING_TOOLS = new Set<ToolType>(["move", "zoom"]);
 
@@ -158,11 +184,29 @@ export function useViewportControls(
         const { activeToolType, brushSize, activeColor, opacity, pipetteMode } =
           useToolStore.getState();
 
+        const { zoom, panX, panY } = useViewportStore.getState();
+        const earlyPixel = pixelAtScreen(e.offsetX, e.offsetY, panX, panY, zoom);
+
+        // Palette pipette mode: sample the composite at the clicked pixel
+        // and append it to the active palette. Short-circuits the active
+        // tool. The texture must be open, but we do NOT require an active
+        // layer since we sample the composite.
+        if (usePaletteStore.getState().pipetteActive) {
+          const { texture } = useEditorStore.getState();
+          if (!texture) return;
+          if (!isInBounds(earlyPixel.x, earlyPixel.y, texture.width, texture.height))
+            return;
+          e.preventDefault();
+          sampleCompositeAndAppend(earlyPixel.x, earlyPixel.y).catch((err) =>
+            console.error("[palette-pipette] failed:", err),
+          );
+          return;
+        }
+
         // Non-drawing tools: no canvas action
         if (NON_DRAWING_TOOLS.has(activeToolType)) return;
 
-        const { zoom, panX, panY } = useViewportStore.getState();
-        const pixel = pixelAtScreen(e.offsetX, e.offsetY, panX, panY, zoom);
+        const pixel = earlyPixel;
         const { texture, activeLayerId } = useEditorStore.getState();
         if (!texture || !activeLayerId) return;
         if (!isInBounds(pixel.x, pixel.y, texture.width, texture.height)) return;

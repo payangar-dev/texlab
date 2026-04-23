@@ -37,6 +37,14 @@ pub enum DomainError {
         expected: usize,
         actual: usize,
     },
+    InvalidInput {
+        reason: String,
+    },
+    /// Business-rule violation with a stable `<kind>[:<arg>...]` code.
+    /// The command layer forwards the payload to the frontend where a
+    /// classifier pattern-matches the prefix. Keeping it in `domain/`
+    /// preserves Principle I (use-cases return only `DomainError`).
+    RuleViolation(String),
 }
 
 impl fmt::Display for DomainError {
@@ -79,6 +87,8 @@ impl fmt::Display for DomainError {
                     "buffer data length {actual} does not match expected {expected}"
                 )
             }
+            Self::InvalidInput { reason } => write!(f, "invalid input: {reason}"),
+            Self::RuleViolation(code) => write!(f, "{code}"),
         }
     }
 }

@@ -1,5 +1,6 @@
 use crate::domain::{
-    BlendMode, Color, Layer, LayerId, PixelBuffer, Selection, Texture, ToolResult,
+    BlendMode, Color, Layer, LayerId, Palette, PaletteScope, PixelBuffer, Selection, Texture,
+    ToolResult,
 };
 use crate::use_cases::editor_service::EditorService;
 
@@ -234,6 +235,93 @@ pub fn parse_layer_id(hex: &str) -> Result<LayerId, crate::error::AppError> {
         .map_err(|_| crate::error::AppError::Internal(format!("invalid layer id: {hex}")))
 }
 
+// --- Palette DTOs ---
+
+/// Wire enum for a palette scope. Serialized as `"global"` / `"project"`.
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PaletteScopeDto {
+    Global,
+    Project,
+}
+
+impl From<PaletteScope> for PaletteScopeDto {
+    fn from(s: PaletteScope) -> Self {
+        match s {
+            PaletteScope::Global => PaletteScopeDto::Global,
+            PaletteScope::Project => PaletteScopeDto::Project,
+        }
+    }
+}
+
+impl From<PaletteScopeDto> for PaletteScope {
+    fn from(s: PaletteScopeDto) -> Self {
+        match s {
+            PaletteScopeDto::Global => PaletteScope::Global,
+            PaletteScopeDto::Project => PaletteScope::Project,
+        }
+    }
+}
+
+/// Wire type for a palette. Colors are `#RRGGBB` hex strings.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaletteDto {
+    pub id: String,
+    pub name: String,
+    pub scope: PaletteScopeDto,
+    pub colors: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaletteListDto {
+    pub palettes: Vec<PaletteDto>,
+    pub active_palette_id: Option<String>,
+    pub can_create_project_palette: bool,
+}
+
+/// Tagged mirror of [`crate::domain::AddColorOutcome`]. Serializes as
+/// `{ "kind": "added" | "alreadyPresent", "index": n }`.
+#[derive(serde::Serialize)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum AddColorOutcomeDto {
+    Added { index: usize },
+    AlreadyPresent { index: usize },
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddColorResultDto {
+    pub outcome: AddColorOutcomeDto,
+    pub palette: PaletteDto,
+}
+
+/// Wire type for the import strategy tagged union. Matches the TypeScript
+/// shape `{ action: "cancel" } | { action: "rename", newName: string } |
+/// { action: "overwrite" }`.
+#[derive(serde::Deserialize)]
+#[serde(tag = "action", rename_all = "camelCase")]
+pub enum ImportStrategyDto {
+    Cancel,
+    #[serde(rename_all = "camelCase")]
+    Rename {
+        new_name: String,
+    },
+    Overwrite,
+}
+
+impl From<&Palette> for PaletteDto {
+    fn from(p: &Palette) -> Self {
+        Self {
+            id: p.id().to_hex_string(),
+            name: p.name().as_str().to_owned(),
+            scope: p.scope().into(),
+            colors: p.colors().iter().map(Color::to_hex_rgb).collect(),
+        }
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
@@ -269,5 +357,69 @@ mod tests {
     fn parse_layer_id_invalid_returns_error() {
         let err = parse_layer_id("not-hex").unwrap_err();
         assert!(err.to_string().contains("invalid layer id: not-hex"));
+    }
+
+    // --- Palette DTO tests ---
+
+    #[test]
+    fn palette_scope_dto_roundtrips_through_domain() {
+        assert_eq!(
+            PaletteScope::from(PaletteScopeDto::Global),
+            PaletteScope::Global
+        );
+        assert_eq!(
+            PaletteScope::from(PaletteScopeDto::Project),
+            PaletteScope::Project
+        );
+        assert_eq!(
+            PaletteScopeDto::from(PaletteScope::Global),
+            PaletteScopeDto::Global
+        );
+        assert_eq!(
+            PaletteScopeDto::from(PaletteScope::Project),
+            PaletteScopeDto::Project
+        );
+    }
+
+    #[test]
+    fn palette_scope_dto_serializes_as_lowercase() {
+        let s = serde_json::to_string(&PaletteScopeDto::Global).unwrap();
+        assert_eq!(s, "\"global\"");
+        let s = serde_json::to_string(&PaletteScopeDto::Project).unwrap();
+        assert_eq!(s, "\"project\"");
+    }
+
+    #[test]
+    fn palette_scope_dto_deserializes_rejects_unknown() {
+        let err = serde_json::from_str::<PaletteScopeDto>("\"banana\"").unwrap_err();
+        assert!(err.to_string().contains("banana") || err.to_string().contains("variant"));
+    }
+
+    #[test]
+    fn palette_dto_from_palette_encodes_scope_and_colors() {
+        use crate::domain::{PaletteId, PaletteName};
+        let mut p = crate::domain::Palette::new(
+            PaletteId::from_value(42),
+            PaletteName::new("Blues").unwrap(),
+            PaletteScope::Global,
+        );
+        p.add_color(Color::new(0x10, 0x20, 0x30, 255));
+        let dto = PaletteDto::from(&p);
+        assert_eq!(dto.id, "0000000000000000000000000000002a");
+        assert_eq!(dto.name, "Blues");
+        assert_eq!(dto.scope, PaletteScopeDto::Global);
+        assert_eq!(dto.colors, vec!["#102030".to_owned()]);
+    }
+
+    #[test]
+    fn add_color_outcome_dto_serializes_tagged() {
+        let dto = AddColorOutcomeDto::Added { index: 3 };
+        let s = serde_json::to_string(&dto).unwrap();
+        assert!(s.contains("\"kind\":\"added\""), "got {s}");
+        assert!(s.contains("\"index\":3"), "got {s}");
+
+        let dto = AddColorOutcomeDto::AlreadyPresent { index: 7 };
+        let s = serde_json::to_string(&dto).unwrap();
+        assert!(s.contains("\"kind\":\"alreadyPresent\""), "got {s}");
     }
 }

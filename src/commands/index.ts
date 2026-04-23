@@ -1,6 +1,7 @@
 import { registerEditCommands } from "./definitions/edit";
 import { registerLayerCommands } from "./definitions/layers";
 import { registerLayoutCommands } from "./definitions/layout";
+import { registerPaletteCommands } from "./definitions/palette";
 import { registerToolCommands } from "./definitions/tools";
 import { registerViewCommands } from "./definitions/view";
 
@@ -10,6 +11,10 @@ const registrations = [
   registerToolCommands,
   registerEditCommands,
   registerViewCommands,
+  // Palette registers before layers so palette's Delete keybinding wins
+  // — the v1 Delete shortcut removes the active swatch; layer deletion
+  // stays available via the panel's trash button.
+  registerPaletteCommands,
   registerLayerCommands,
   registerLayoutCommands,
 ];

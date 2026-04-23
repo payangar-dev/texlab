@@ -67,6 +67,7 @@ src/               # React + TypeScript frontend
 - **.texlab**: ZIP archive per texture — contains layer PNGs + metadata JSON. Created lazily on first edit.
 - **Progressive conversion**: Opening a source texture reads the original PNG. A .texlab is created only when the user edits.
 - **Panels**: Dockable via dockview — Sources, Layers, Color, Palette, Model Preview. User arranges freely.
+- **Palette + .texpal**: Named, ordered, opaque-only swatch lists scoped global (`<app_data_dir>/palettes/`) or project (`<project>/palettes/`). Exported as UTF-8 JSON `.texpal` files (schema version 1); active-palette memory persists in `<app_data_dir>/palette-state.json`.
 - **MCP**: Embedded Streamable HTTP server (rmcp). AI agents read/modify textures via tools (get_editor_state, set_pixels, etc.)
 
 ## Active Technologies

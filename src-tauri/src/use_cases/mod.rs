@@ -7,3 +7,4 @@
 #![allow(dead_code)]
 
 pub mod editor_service;
+pub mod palette_service;
