@@ -53,7 +53,7 @@ export function PaletteDropdown({
           {active ? <ScopeIcon scope={active.scope} /> : null}
           <span style={nameStyle}>{active?.name ?? "— Select a palette —"}</span>
         </span>
-        <ChevronDown size={12} color={colors.textSecondary} />
+        <ChevronDown size={10} color={colors.textSecondary} />
       </button>
       {open && (
         <div role="listbox" style={menuStyle}>
@@ -103,9 +103,9 @@ function ScopeIcon({ scope }: { scope: "global" | "project" }) {
       style={{ display: "inline-flex", alignItems: "center", flexShrink: 0 }}
     >
       {scope === "global" ? (
-        <Globe size={12} color={colors.textSecondary} />
+        <Globe size={10} color={colors.textSecondary} />
       ) : (
-        <FolderClosed size={12} color={colors.textSecondary} />
+        <FolderClosed size={10} color={colors.textSecondary} />
       )}
     </span>
   );
@@ -118,19 +118,19 @@ const containerStyle: React.CSSProperties = {
 
 const triggerStyle: React.CSSProperties = {
   width: "100%",
-  height: 26,
-  padding: "0 8px",
+  height: 22,
+  padding: "0 6px",
   background: colors.inputField,
-  color: colors.textPrimary,
+  color: colors.textTitle,
   border: "none",
   borderRadius: 4,
   fontFamily: fonts.ui,
-  fontSize: fontSizes.sm,
+  fontSize: fontSizes.xs,
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: 8,
+  gap: 6,
   textAlign: "left",
 };
 
@@ -164,7 +164,7 @@ const menuStyle: React.CSSProperties = {
   zIndex: 10,
   boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
   fontFamily: fonts.ui,
-  fontSize: fontSizes.sm,
+  fontSize: fontSizes.xs,
   color: colors.textPrimary,
 };
 
@@ -172,7 +172,7 @@ const optionStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 6,
-  padding: "5px 8px",
+  padding: "4px 6px",
   borderRadius: 3,
   cursor: "pointer",
 };

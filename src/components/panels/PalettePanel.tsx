@@ -204,6 +204,25 @@ export function PalettePanel(_props: IDockviewPanelProps) {
 
   return (
     <div style={containerStyle}>
+      {palettes.length === 0 ? (
+        <span style={emptyStyle}>No palettes — create one.</span>
+      ) : (
+        <PaletteDropdown
+          palettes={palettes}
+          activePaletteId={activePaletteId}
+          onSelect={handleSelect}
+        />
+      )}
+      {activePalette &&
+        (activePalette.colors.length === 0 ? (
+          <div style={emptyStyle}>This palette has no swatches. Add colors below.</div>
+        ) : (
+          <SwatchGrid
+            colors={activePalette.colors}
+            pulseIndex={pulse?.index ?? null}
+            pulseToken={pulse?.token}
+          />
+        ))}
       <PaletteActionBar
         hasActivePalette={activePalette !== null}
         pipetteActive={pipetteActive}
@@ -215,27 +234,6 @@ export function PalettePanel(_props: IDockviewPanelProps) {
         onSave={handleSave}
         onLoad={handleLoad}
       />
-      <div style={dropdownWrapStyle}>
-        {palettes.length === 0 ? (
-          <span style={emptyStyle}>No palettes — create one.</span>
-        ) : (
-          <PaletteDropdown
-            palettes={palettes}
-            activePaletteId={activePaletteId}
-            onSelect={handleSelect}
-          />
-        )}
-      </div>
-      {activePalette &&
-        (activePalette.colors.length === 0 ? (
-          <div style={emptyStyle}>This palette has no swatches. Add colors above.</div>
-        ) : (
-          <SwatchGrid
-            colors={activePalette.colors}
-            pulseIndex={pulse?.index ?? null}
-            pulseToken={pulse?.token}
-          />
-        ))}
 
       {dialog.kind === "new" && (
         <NewPaletteDialog
@@ -316,17 +314,16 @@ const containerStyle: React.CSSProperties = {
   height: "100%",
   display: "flex",
   flexDirection: "column",
+  gap: 4,
+  padding: 6,
   background: colors.panelBody,
   overflow: "hidden",
-};
-
-const dropdownWrapStyle: React.CSSProperties = {
-  padding: 6,
-  borderBottom: `1px solid ${colors.separator}`,
+  boxSizing: "border-box",
 };
 
 const emptyStyle: React.CSSProperties = {
   display: "block",
+  flex: 1,
   padding: 12,
   textAlign: "center",
   color: colors.textMuted,

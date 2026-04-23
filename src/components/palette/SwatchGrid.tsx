@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useToolStore } from "../../store/toolStore";
-import { colors } from "../../styles/theme";
+import { colors, fontSizes } from "../../styles/theme";
 import { colorDtoToHex, hexToColorDto } from "../../utils/colorHex";
 
 interface SwatchGridProps {
@@ -101,18 +101,18 @@ function buildShadow(isPrimary: boolean, isSecondary: boolean): string {
 
 const gridStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(22px, 1fr))",
-  gap: 4,
-  padding: 6,
+  gridTemplateColumns: "repeat(auto-fill, minmax(16px, 1fr))",
+  gap: 3,
   overflowY: "auto",
   flex: 1,
+  alignContent: "start",
 };
 
 const swatchStyle: React.CSSProperties = {
   width: "100%",
   aspectRatio: "1 / 1",
   border: "none",
-  borderRadius: 3,
+  borderRadius: 2,
   padding: 0,
   cursor: "pointer",
 };
@@ -120,7 +120,7 @@ const swatchStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   padding: 12,
   color: colors.textMuted,
-  fontSize: 12,
+  fontSize: fontSizes.sm,
   textAlign: "center",
 };
 

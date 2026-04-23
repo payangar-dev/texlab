@@ -7,7 +7,9 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import { colors } from "../../styles/theme";
+
+const ICON_SIZE = 12;
 
 type ActionBarHandlers = {
   onNew: () => void;
@@ -44,7 +46,7 @@ export function PaletteActionBar({
         title="New palette"
         aria-label="New palette"
       >
-        <Plus size={13} color={colors.textSecondary} />
+        <Plus size={ICON_SIZE} color={colors.textSecondary} />
       </button>
       <button
         type="button"
@@ -54,7 +56,7 @@ export function PaletteActionBar({
         title="Rename palette"
         aria-label="Rename palette"
       >
-        <Pencil size={13} color={colors.textSecondary} />
+        <Pencil size={ICON_SIZE} color={colors.textSecondary} />
       </button>
       <button
         type="button"
@@ -64,7 +66,7 @@ export function PaletteActionBar({
         title="Delete palette"
         aria-label="Delete palette"
       >
-        <Trash2 size={13} color={colors.textSecondary} />
+        <Trash2 size={ICON_SIZE} color={colors.textSecondary} />
       </button>
       <div style={separatorStyle} />
       <button
@@ -84,7 +86,10 @@ export function PaletteActionBar({
         aria-label="Toggle pipette mode"
         aria-pressed={pipetteActive}
       >
-        <Pipette size={13} color={pipetteActive ? "#FFFFFF" : colors.textSecondary} />
+        <Pipette
+          size={ICON_SIZE}
+          color={pipetteActive ? "#FFFFFF" : colors.textSecondary}
+        />
       </button>
       <button
         type="button"
@@ -94,7 +99,7 @@ export function PaletteActionBar({
         title="Add primary color to the palette"
         aria-label="Add primary color"
       >
-        <PaletteIcon size={13} color={colors.textSecondary} />
+        <PaletteIcon size={ICON_SIZE} color={colors.textSecondary} />
       </button>
       <div style={separatorStyle} />
       <button
@@ -105,7 +110,7 @@ export function PaletteActionBar({
         title="Export palette to a .texpal file"
         aria-label="Save palette"
       >
-        <Save size={13} color={colors.textSecondary} />
+        <Save size={ICON_SIZE} color={colors.textSecondary} />
       </button>
       <button
         type="button"
@@ -114,7 +119,7 @@ export function PaletteActionBar({
         title="Import a palette from a .texpal file"
         aria-label="Load palette"
       >
-        <Upload size={13} color={colors.textSecondary} />
+        <Upload size={ICON_SIZE} color={colors.textSecondary} />
       </button>
     </div>
   );
@@ -128,12 +133,6 @@ const barStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: 4,
-  padding: "4px 6px",
-  height: 30,
-  borderBottom: `1px solid ${colors.separator}`,
-  background: colors.panelHeader,
-  fontFamily: fonts.ui,
-  fontSize: fontSizes.xs,
   flexShrink: 0,
 };
 
@@ -141,8 +140,8 @@ const buttonStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  width: 24,
-  height: 22,
+  width: 22,
+  height: 20,
   borderRadius: 4,
   background: colors.inputField,
   border: "none",
@@ -152,7 +151,8 @@ const buttonStyle: React.CSSProperties = {
 
 const separatorStyle: React.CSSProperties = {
   width: 1,
-  height: 16,
+  height: 14,
   background: colors.separator,
   margin: "0 2px",
+  opacity: 0.6,
 };
