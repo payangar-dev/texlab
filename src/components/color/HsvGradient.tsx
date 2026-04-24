@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ColorDto } from "../../api/commands";
-import { colorToGradientPos } from "../../utils/color";
+import { colors, radii, sizing } from "../../styles/theme";
+import { colorToGradientPos, HSV_HUE_STOPS } from "../../utils/color";
 
-const CURSOR_SIZE = 10;
-const CURSOR_OFFSET = CURSOR_SIZE / 2;
+const CURSOR_OFFSET = sizing.hsvCursor / 2;
 
 interface HsvGradientProps {
   color: ColorDto;
@@ -26,13 +26,9 @@ export function HsvGradient({ color, onChange }: HsvGradientProps) {
 
     // Layer 1: Horizontal hue spectrum
     const hueGrad = ctx.createLinearGradient(0, 0, width, 0);
-    hueGrad.addColorStop(0, "#FF0000");
-    hueGrad.addColorStop(1 / 6, "#FFFF00");
-    hueGrad.addColorStop(2 / 6, "#00FF00");
-    hueGrad.addColorStop(3 / 6, "#00FFFF");
-    hueGrad.addColorStop(4 / 6, "#0000FF");
-    hueGrad.addColorStop(5 / 6, "#FF00FF");
-    hueGrad.addColorStop(1, "#FF0000");
+    for (const stop of HSV_HUE_STOPS) {
+      hueGrad.addColorStop(stop.offset, stop.color);
+    }
     ctx.fillStyle = hueGrad;
     ctx.fillRect(0, 0, width, height);
 
@@ -143,7 +139,7 @@ const containerStyle: React.CSSProperties = {
   width: "100%",
   flex: 1,
   minHeight: 0,
-  borderRadius: 6,
+  borderRadius: radii.lg,
   overflow: "hidden",
 };
 
@@ -156,10 +152,10 @@ const canvasStyle: React.CSSProperties = {
 
 const cursorStyle: React.CSSProperties = {
   position: "absolute",
-  width: CURSOR_SIZE,
-  height: CURSOR_SIZE,
+  width: sizing.hsvCursor,
+  height: sizing.hsvCursor,
   borderRadius: "50%",
-  border: "2px solid #FFFFFF",
+  border: `${sizing.selectionRing}px solid ${colors.white}`,
   pointerEvents: "none",
   boxSizing: "border-box",
 };

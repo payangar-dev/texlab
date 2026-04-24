@@ -1,3 +1,14 @@
+import {
+  colors,
+  fontSizes,
+  fonts,
+  radii,
+  shadows,
+  sizing,
+  spacing,
+  zIndices,
+} from "../styles/theme";
+
 /**
  * Minimal toast helper — no external library. Surfaces a short message in a
  * bottom-right overlay for ~3 seconds. Multiple toasts stack.
@@ -14,14 +25,14 @@ function ensureContainer(): HTMLElement | null {
   el.id = CONTAINER_ID;
   el.style.cssText = [
     "position:fixed",
-    "bottom:12px",
-    "right:12px",
-    "z-index:2000",
+    `bottom:${spacing.xl}px`,
+    `right:${spacing.xl}px`,
+    `z-index:${zIndices.toast}`,
     "display:flex",
     "flex-direction:column",
-    "gap:6px",
+    `gap:${spacing.md}px`,
     "pointer-events:none",
-    "font-family:Inter, system-ui, sans-serif",
+    `font-family:${fonts.ui}`,
   ].join(";");
   document.body.appendChild(el);
   return el;
@@ -29,20 +40,26 @@ function ensureContainer(): HTMLElement | null {
 
 export function showToast(message: string): void {
   const container = ensureContainer();
-  if (!container) return;
+  if (!container) {
+    // Fires when a toast is requested before the DOM is ready (e.g. an
+    // error during early boot). We can't surface the message visually —
+    // at least leave a trail in the console so the debug loop is possible.
+    console.warn("[toast] showToast called before DOM ready:", message);
+    return;
+  }
   const toast = document.createElement("div");
   toast.textContent = message;
   toast.style.cssText = [
-    "background:#2A2A2A",
-    "color:#E0E0E0",
-    "padding:8px 12px",
-    "border-radius:4px",
-    "font-size:12px",
-    "border:1px solid #3A3A3A",
-    "box-shadow:0 2px 8px rgba(0,0,0,0.4)",
+    `background:${colors.panelHeader}`,
+    `color:${colors.textPrimary}`,
+    `padding:${spacing.lg}px ${spacing.xl}px`,
+    `border-radius:${radii.md}px`,
+    `font-size:${fontSizes.sm}px`,
+    `border:1px solid ${colors.separator}`,
+    `box-shadow:${shadows.toastElevation}`,
     "opacity:0",
     "transition:opacity 150ms ease-out",
-    "max-width:320px",
+    `max-width:${sizing.dialog.minWidth}px`,
     "pointer-events:auto",
   ].join(";");
   container.appendChild(toast);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useViewportStore } from "../../store/viewportStore";
-import { CHECKERBOARD_COLOR_A, CHECKERBOARD_COLOR_B, GRID_THRESHOLD } from "./constants";
+import { colors } from "../../styles/theme";
+import { GRID_THRESHOLD } from "./constants";
 import { bresenhamLine, gridOpacity } from "./math";
 
 export interface CanvasRendererApi {
@@ -39,9 +40,9 @@ export function useCanvasRenderer(
       patternCanvas.height = 2;
       const pCtx = patternCanvas.getContext("2d");
       if (!pCtx) return null;
-      pCtx.fillStyle = CHECKERBOARD_COLOR_A;
+      pCtx.fillStyle = colors.canvasCheckerA;
       pCtx.fillRect(0, 0, 2, 2);
-      pCtx.fillStyle = CHECKERBOARD_COLOR_B;
+      pCtx.fillStyle = colors.canvasCheckerB;
       pCtx.fillRect(1, 0, 1, 1);
       pCtx.fillRect(0, 1, 1, 1);
       patternRef.current = ctx.createPattern(patternCanvas, "repeat");
@@ -146,7 +147,7 @@ export function useCanvasRenderer(
         const firstRow = Math.max(0, Math.floor(-panY / zoom));
         const lastRow = Math.min(texH, Math.ceil((containerHeight - panY) / zoom));
 
-        ctx.strokeStyle = `rgba(128,128,128,${alpha})`;
+        ctx.strokeStyle = `rgba(${colors.canvasGridLineBase}, ${alpha})`;
         ctx.lineWidth = 1;
 
         ctx.beginPath();
@@ -176,9 +177,9 @@ export function useCanvasRenderer(
         const rw = Math.round(previewSize * zoom * dpr);
         const rh = Math.round(previewSize * zoom * dpr);
 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.fillStyle = colors.brushPreviewFill;
         ctx.fillRect(rx, ry, rw, rh);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.strokeStyle = colors.brushPreviewStroke;
         ctx.lineWidth = 1;
         ctx.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
       }
@@ -197,7 +198,7 @@ export function useCanvasRenderer(
           );
 
           ctx.resetTransform();
-          ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+          ctx.fillStyle = colors.linePreviewFill;
 
           for (const pt of points) {
             const lx = Math.round((panX + (pt.x + 0.5 - halfF) * zoom) * dpr);

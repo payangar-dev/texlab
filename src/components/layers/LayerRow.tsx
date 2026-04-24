@@ -5,7 +5,17 @@ import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react"
 import type { LayerInfoDto } from "../../api/commands";
 import { setLayerName, setLayerVisibility } from "../../api/commands";
 import { useEditorStore } from "../../store/editorStore";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import {
+  colors,
+  fontSizes,
+  fonts,
+  iconSizes,
+  opacities,
+  radii,
+  shadows,
+  sizing,
+  spacing,
+} from "../../styles/theme";
 
 // --- Presentational component (used by both sortable row and DragOverlay) ---
 
@@ -40,9 +50,9 @@ export function LayerRowContent({
     const imageData = new ImageData(thumbnailData, textureWidth, textureHeight);
     createImageBitmap(imageData)
       .then((bitmap) => {
-        ctx.clearRect(0, 0, 18, 18);
+        ctx.clearRect(0, 0, sizing.thumbnailSize, sizing.thumbnailSize);
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(bitmap, 0, 0, 18, 18);
+        ctx.drawImage(bitmap, 0, 0, sizing.thumbnailSize, sizing.thumbnailSize);
         bitmap.close();
       })
       .catch((err) => console.warn("[LayerRow] thumbnail render failed:", err));
@@ -54,10 +64,10 @@ export function LayerRowContent({
 
   const style: CSSProperties = {
     ...rowStyle,
-    backgroundColor: isActive ? colors.selectedItem : "transparent",
-    opacity: layer.visible ? 1 : 0.4,
+    backgroundColor: isActive ? colors.selectedItem : colors.transparent,
+    opacity: layer.visible ? opacities.full : opacities.dimmed,
     ...(isDragOverlay && {
-      boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+      boxShadow: shadows.dragElevation,
       cursor: "grabbing",
     }),
   };
@@ -65,9 +75,14 @@ export function LayerRowContent({
   return (
     <div style={style}>
       <div style={visibilityButtonStyle}>
-        <VisibilityIcon size={12} color={iconColor} />
+        <VisibilityIcon size={iconSizes.sm} color={iconColor} />
       </div>
-      <canvas ref={canvasRef} width={18} height={18} style={thumbnailStyle} />
+      <canvas
+        ref={canvasRef}
+        width={sizing.thumbnailSize}
+        height={sizing.thumbnailSize}
+        style={thumbnailStyle}
+      />
       <span style={nameStyle}>{layer.name}</span>
       <span style={opacityStyle}>{opacityPercent}</span>
     </div>
@@ -115,9 +130,9 @@ export function LayerRow({
     const imageData = new ImageData(thumbnailData, textureWidth, textureHeight);
     createImageBitmap(imageData)
       .then((bitmap) => {
-        ctx.clearRect(0, 0, 18, 18);
+        ctx.clearRect(0, 0, sizing.thumbnailSize, sizing.thumbnailSize);
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(bitmap, 0, 0, 18, 18);
+        ctx.drawImage(bitmap, 0, 0, sizing.thumbnailSize, sizing.thumbnailSize);
         bitmap.close();
       })
       .catch((err) => console.warn("[LayerRow] thumbnail render failed:", err));
@@ -185,10 +200,11 @@ export function LayerRow({
   const VisibilityIcon = layer.visible ? Eye : EyeOff;
   const iconColor = layer.visible ? colors.accent : colors.textSecondary;
 
+  const rowOpacity = isDragging || !layer.visible ? opacities.dimmed : opacities.full;
   const style: CSSProperties = {
     ...rowStyle,
-    backgroundColor: isActive ? colors.selectedItem : "transparent",
-    opacity: isDragging ? 0.4 : layer.visible ? 1 : 0.4,
+    backgroundColor: isActive ? colors.selectedItem : colors.transparent,
+    opacity: rowOpacity,
     transform: CSS.Translate.toString(transform),
     transition: transition ?? undefined,
   };
@@ -208,9 +224,14 @@ export function LayerRow({
         style={visibilityButtonStyle}
         onClick={handleToggleVisibility}
       >
-        <VisibilityIcon size={12} color={iconColor} />
+        <VisibilityIcon size={iconSizes.sm} color={iconColor} />
       </button>
-      <canvas ref={canvasRef} width={18} height={18} style={thumbnailStyle} />
+      <canvas
+        ref={canvasRef}
+        width={sizing.thumbnailSize}
+        height={sizing.thumbnailSize}
+        style={thumbnailStyle}
+      />
       {isRenaming ? (
         <input
           ref={inputRef}
@@ -245,10 +266,10 @@ export function LayerRow({
 const rowStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 6,
-  height: 30,
-  borderRadius: 4,
-  padding: "0 6px",
+  gap: spacing.md,
+  height: sizing.layerRowHeight,
+  borderRadius: radii.md,
+  padding: `0 ${spacing.md}px`,
   cursor: "pointer",
   flexShrink: 0,
 };
@@ -257,20 +278,20 @@ const visibilityButtonStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  width: 20,
-  height: 20,
+  width: sizing.button.xs,
+  height: sizing.button.xs,
   flexShrink: 0,
   cursor: "pointer",
-  borderRadius: 3,
-  background: "transparent",
+  borderRadius: radii.xs,
+  background: colors.transparent,
   border: "none",
   padding: 0,
 };
 
 const thumbnailStyle: CSSProperties = {
-  width: 18,
-  height: 18,
-  borderRadius: 3,
+  width: sizing.thumbnailSize,
+  height: sizing.thumbnailSize,
+  borderRadius: radii.xs,
   flexShrink: 0,
   imageRendering: "pixelated",
 };
@@ -295,8 +316,8 @@ const renameInputStyle: CSSProperties = {
   flex: 1,
   background: colors.inputField,
   border: `1px solid ${colors.accent}`,
-  borderRadius: 2,
-  padding: "1px 3px",
+  borderRadius: radii.sm,
+  padding: `${sizing.hairline}px ${spacing.grid}px`,
   outline: "none",
   minWidth: 0,
 };
@@ -304,7 +325,7 @@ const renameInputStyle: CSSProperties = {
 const opacityStyle: CSSProperties = {
   color: colors.textSecondary,
   fontFamily: fonts.mono,
-  fontSize: 8,
+  fontSize: fontSizes.xs,
   fontWeight: "normal",
   flexShrink: 0,
   userSelect: "none",

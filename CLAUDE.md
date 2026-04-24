@@ -11,7 +11,7 @@ Pixel art texture editor for Minecraft resource packs, built with Tauri v2 (Rust
 
 ## Architecture
 
-Strict Clean Architecture with inward-pointing dependencies. See `.specify/memory/constitution.md` for the full constitution (7 principles).
+Strict Clean Architecture with inward-pointing dependencies. See `.specify/memory/constitution.md` for the full constitution (8 principles).
 
 ```
 src-tauri/src/
@@ -39,6 +39,13 @@ src/               # React + TypeScript frontend
 - All commands registered in `generate_handler![]`
 - Domain types have NO serde derives — separate DTOs for IPC
 - State is shared between frontend (Tauri IPC) and MCP server (direct Rust)
+
+### Visual tokens
+
+- `src/styles/theme.ts` is the **only** place visual literals (colours, font sizes, spacing, sizing, icon sizes, radii, shadows) live. Every other file under `src/**` reads tokens from it.
+- Design mockups (under `ui-design/`) are references for **structure** — composition, hierarchy, what goes next to what — not for raw pixel values.
+- If a needed token is missing, **extend the theme first, then consume it.** Hardcoded values fail `npm run check` (Biome GritQL plugin `biome-plugins/no-style-literals.grit`).
+- See constitution principle **VIII. Theme-First, Mockups Second** for the full rule, the structural exceptions (`0`, `1px`, `100%`, `auto`), and the legibility floor (11 px text / 12 px icons).
 
 ## Tech Stack
 
@@ -75,6 +82,8 @@ src/               # React + TypeScript frontend
 - File system only (project files, .texlab archives — future features) (001-project-scaffolding)
 - Rust ≥ 1.77 + None (domain layer — std only) (002-core-domain)
 - N/A (no I/O in domain) (002-core-domain)
+- TypeScript ^5.7 (frontend). No Rust backend changes in this feature. + React ^19.2, dockview ^5.2, Biome ^2.4.9 (linter + GritQL plugin host), Vite ^6.0, Vitest ^4.1. (039-theme-tokens-migration)
+- N/A — purely an in-source code change (plus a TS module that writes CSS custom properties on `:root` at runtime). (039-theme-tokens-migration)
 
 ## Recent Changes
 - 001-project-scaffolding: Added Rust ≥ 1.77 (backend), TypeScript ^5.7 (frontend), Node.js ≥ 20 LTS + tauri ^2.10, react ^19.2, vite ^6.0, zustand ^5.0 (see constitution for full list)

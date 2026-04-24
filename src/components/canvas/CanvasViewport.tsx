@@ -4,7 +4,7 @@ import { getComposite } from "../../api/commands";
 import { useResizeObserver } from "../../hooks/useResizeObserver";
 import { useEditorStore } from "../../store/editorStore";
 import { useViewportStore } from "../../store/viewportStore";
-import { fontSizes } from "../../styles/theme";
+import { colors, fontSizes } from "../../styles/theme";
 import { ToolOptionsBar } from "../shell/ToolOptionsBar";
 import { useCanvasRenderer } from "./useCanvasRenderer";
 import { useViewportControls } from "./useViewportControls";
@@ -130,11 +130,17 @@ const CanvasViewport = memo(function CanvasViewport(_props?: Record<string, unkn
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "#2D2D2D",
+            background: colors.canvasBackground,
             overflow: "hidden",
           }}
         >
-          <span style={{ color: "#666", fontSize: fontSizes.lg, userSelect: "none" }}>
+          <span
+            style={{
+              color: colors.textMuted,
+              fontSize: fontSizes.lg,
+              userSelect: "none",
+            }}
+          >
             No texture loaded
           </span>
         </div>
@@ -159,7 +165,7 @@ const CanvasViewport = memo(function CanvasViewport(_props?: Record<string, unkn
           flex: 1,
           overflow: "hidden",
           position: "relative",
-          background: "#2D2D2D",
+          background: colors.canvasBackground,
         }}
       >
         <canvas

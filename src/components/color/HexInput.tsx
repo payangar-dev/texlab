@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ColorDto } from "../../api/commands";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import { colors, fontSizes, fonts, radii, sizing, spacing } from "../../styles/theme";
 import { hexToRgb, rgbToHex } from "../../utils/color";
 
 interface HexInputProps {
@@ -69,9 +69,9 @@ const inputStyle: React.CSSProperties = {
   color: colors.textTitle,
   background: colors.inputField,
   border: "none",
-  borderRadius: 4,
-  height: 20,
-  padding: "0 6px",
+  borderRadius: radii.md,
+  height: sizing.button.xs,
+  padding: `0 ${spacing.md}px`,
   flexGrow: 1,
   minWidth: 0,
   outline: "none",

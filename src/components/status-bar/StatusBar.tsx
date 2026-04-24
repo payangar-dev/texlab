@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useEditorStore } from "../../store/editorStore";
 import { useViewportStore } from "../../store/viewportStore";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import { colors, fontSizes, fonts, sizing, spacing } from "../../styles/theme";
 import { subscribeToCursor } from "../canvas/CanvasViewport";
 
 const monoStyle: React.CSSProperties = {
@@ -23,13 +23,13 @@ export default function StatusBar() {
   return (
     <div
       style={{
-        height: 28,
-        minHeight: 28,
+        height: sizing.tabBarHeight,
+        minHeight: sizing.tabBarHeight,
         background: colors.statusBar,
         display: "flex",
         alignItems: "center",
-        gap: 24,
-        padding: "0 12px",
+        gap: spacing["3xl"],
+        padding: `0 ${spacing.xl}px`,
       }}
     >
       <span style={monoStyle}>

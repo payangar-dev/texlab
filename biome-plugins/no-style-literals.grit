@@ -1,0 +1,137 @@
+// Enforces the "theme-first" rule: no hex colour literal and no magic pixel
+// number may appear in a style context in frontend TS/TSX source.
+//
+// File-based exemptions (theme.ts, applyThemeToRoot.ts, user-data colour
+// utilities, test files) are expressed inline via `$filename` predicates on
+// each rule so that valid code produces no diagnostics.
+//
+// Known limitations (not surveilled):
+//  - Template-string concatenations such as `` `2px solid ${colors.x}` ``
+//    or `` `0 0 0 2px ${colors.x}` ``. Introduce a token (e.g.
+//    `sizing.selectionRing`) and interpolate it at the call site instead.
+//  - Canvas 2D API string literals (`ctx.fillStyle = "rgba(...)"`) — these
+//    are `assignment expressions`, not `$prop: $value` pairs. Define the
+//    colour in `theme.ts` (see `colors.canvasGridLineBase` etc.) and
+//    reference it.
+//  - Module-level numeric constants (e.g. `const CURSOR_SIZE = 10`) used
+//    as if they were tokens.
+
+language js
+
+or {
+  // Rule A: hex colour string literal in a CSS-ish property.
+  `$prop: $value` as $match where {
+    $filename <: not or {
+      r".*[/\\]styles[/\\]theme\.ts$",
+      r".*[/\\]styles[/\\]applyThemeToRoot\.ts$",
+      r".*[/\\]utils[/\\]color\.ts$",
+      r".*[/\\]utils[/\\]colorHex\.ts$",
+      r".*\.test\.ts$",
+      r".*\.test\.tsx$",
+      r".*\.spec\.ts$",
+      r".*\.spec\.tsx$",
+      r".*[/\\]__tests__[/\\].*"
+    },
+    $prop <: or {
+      `color`,
+      `background`,
+      `backgroundColor`,
+      `border`,
+      `borderTop`,
+      `borderRight`,
+      `borderBottom`,
+      `borderLeft`,
+      `borderColor`,
+      `borderTopColor`,
+      `borderRightColor`,
+      `borderBottomColor`,
+      `borderLeftColor`,
+      `boxShadow`,
+      `fill`,
+      `stroke`,
+      `caretColor`,
+      `accentColor`,
+      `outline`,
+      `outlineColor`,
+      `textShadow`
+    },
+    // Only valid CSS hex-colour lengths: 3 (RGB), 4 (RGBA), 6 (RRGGBB), 8 (RRGGBBAA).
+    $value <: r"^\"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\"$",
+    register_diagnostic(
+      span = $match,
+      message = "Hex colour literals are not allowed in frontend components. Move this colour into src/styles/theme.ts and import it from there."
+    )
+  },
+
+  // Rule B: magic pixel number in a CSS-ish sizing/spacing/typography property.
+  `$prop: $n` as $match where {
+    $filename <: not or {
+      r".*[/\\]styles[/\\]theme\.ts$",
+      r".*[/\\]styles[/\\]applyThemeToRoot\.ts$",
+      r".*[/\\]utils[/\\]color\.ts$",
+      r".*[/\\]utils[/\\]colorHex\.ts$",
+      r".*\.test\.ts$",
+      r".*\.test\.tsx$",
+      r".*\.spec\.ts$",
+      r".*\.spec\.tsx$",
+      r".*[/\\]__tests__[/\\].*"
+    },
+    $prop <: or {
+      `fontSize`,
+      `padding`,
+      `paddingTop`,
+      `paddingRight`,
+      `paddingBottom`,
+      `paddingLeft`,
+      `margin`,
+      `marginTop`,
+      `marginRight`,
+      `marginBottom`,
+      `marginLeft`,
+      `gap`,
+      `rowGap`,
+      `columnGap`,
+      `width`,
+      `minWidth`,
+      `maxWidth`,
+      `height`,
+      `minHeight`,
+      `maxHeight`,
+      `top`,
+      `right`,
+      `bottom`,
+      `left`,
+      `borderRadius`,
+      `lineHeight`,
+      `fontWeight`,
+      `zIndex`
+    },
+    $n <: r"^[0-9]+$",
+    not $n <: `0`,
+    register_diagnostic(
+      span = $match,
+      message = "Magic pixel numbers are not allowed in frontend components. Use a named token from src/styles/theme.ts (spacing, sizing, iconSizes, radii, fontSizes, fontWeights, zIndices)."
+    )
+  },
+
+  // Rule B': numeric `size={N}` prop on a JSX element.
+  `size={$n}` as $match where {
+    $filename <: not or {
+      r".*[/\\]styles[/\\]theme\.ts$",
+      r".*[/\\]styles[/\\]applyThemeToRoot\.ts$",
+      r".*[/\\]utils[/\\]color\.ts$",
+      r".*[/\\]utils[/\\]colorHex\.ts$",
+      r".*\.test\.ts$",
+      r".*\.test\.tsx$",
+      r".*\.spec\.ts$",
+      r".*\.spec\.tsx$",
+      r".*[/\\]__tests__[/\\].*"
+    },
+    $n <: r"^[0-9]+$",
+    not $n <: `0`,
+    register_diagnostic(
+      span = $match,
+      message = "Icon sizes must come from src/styles/theme.ts iconSizes scale."
+    )
+  }
+}

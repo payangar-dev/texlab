@@ -1,5 +1,5 @@
 import type { IDockviewPanelProps } from "dockview";
-import { fontSizes } from "../../styles/theme";
+import { colors, fontSizes } from "../../styles/theme";
 
 export function ModelPreviewPanel(_props: IDockviewPanelProps) {
   return (
@@ -15,11 +15,11 @@ const containerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  background: "#252525",
+  background: colors.panelBody,
 };
 
 const placeholderStyle: React.CSSProperties = {
-  color: "#666666",
+  color: colors.textMuted,
   fontSize: fontSizes.lg,
   userSelect: "none",
 };

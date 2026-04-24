@@ -4,6 +4,22 @@ export interface HsvColor {
   v: number; // 0–1
 }
 
+/**
+ * Pure-hue stops for the HSV picker's horizontal hue gradient. These are
+ * mathematical reference values (the six primary/secondary hue corners
+ * plus the wrap-around red), not design tokens — they define what the
+ * picker renders, not any design choice.
+ */
+export const HSV_HUE_STOPS: readonly { offset: number; color: string }[] = [
+  { offset: 0, color: "#FF0000" },
+  { offset: 1 / 6, color: "#FFFF00" },
+  { offset: 2 / 6, color: "#00FF00" },
+  { offset: 3 / 6, color: "#00FFFF" },
+  { offset: 4 / 6, color: "#0000FF" },
+  { offset: 5 / 6, color: "#FF00FF" },
+  { offset: 1, color: "#FF0000" },
+];
+
 export function hsvToRgb(hsv: HsvColor): { r: number; g: number; b: number } {
   const { h, s, v } = hsv;
   const c = v * s;
