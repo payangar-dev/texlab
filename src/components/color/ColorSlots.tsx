@@ -1,5 +1,6 @@
 import { ArrowLeftRight } from "lucide-react";
 import { useToolStore } from "../../store/toolStore";
+import { colors, iconSizes, radii, shadows, sizing } from "../../styles/theme";
 import { rgbToHex } from "../../utils/color";
 
 export function ColorSlots() {
@@ -17,7 +18,7 @@ export function ColorSlots() {
         style={{
           ...slotStyle,
           backgroundColor: rgbToHex(activeColor.r, activeColor.g, activeColor.b),
-          border: activeSlot === "primary" ? "1.5px solid #4A9FD8" : "1px solid #444444",
+          boxShadow: buildSlotShadow(activeSlot === "primary"),
         }}
         title="Primary color"
       />
@@ -28,7 +29,7 @@ export function ColorSlots() {
         style={swapButtonStyle}
         title="Swap colors (X)"
       >
-        <ArrowLeftRight size={10} />
+        <ArrowLeftRight size={iconSizes.sm} />
       </button>
       <button
         type="button"
@@ -36,8 +37,7 @@ export function ColorSlots() {
         style={{
           ...slotStyle,
           backgroundColor: rgbToHex(secondaryColor.r, secondaryColor.g, secondaryColor.b),
-          border:
-            activeSlot === "secondary" ? "1.5px solid #4A9FD8" : "1px solid #444444",
+          boxShadow: buildSlotShadow(activeSlot === "secondary"),
         }}
         title="Secondary color"
       />
@@ -46,10 +46,26 @@ export function ColorSlots() {
   );
 }
 
+/**
+ * Selected rings match the palette swatch treatment: outer accent ring
+ * on selection + inset hairline always visible so light colours still
+ * show a boundary. ColorSlots live in a flex row inside ColorPanel
+ * (padding = `spacing.md`, no overflow-clipping ancestor close by), so
+ * the outer ring has room to render without the safe-zone hack that
+ * SwatchGrid needs.
+ */
+function buildSlotShadow(selected: boolean): string {
+  const parts: string[] = [];
+  if (selected) parts.push(`0 0 0 ${sizing.selectionRing}px ${colors.accent}`);
+  parts.push(shadows.swatchInsetBorder);
+  return parts.join(", ");
+}
+
 const slotStyle: React.CSSProperties = {
-  width: 20,
-  height: 20,
-  borderRadius: 3,
+  width: sizing.button.xs,
+  height: sizing.button.xs,
+  borderRadius: radii.sm,
+  border: "none",
   padding: 0,
   cursor: "pointer",
   flexShrink: 0,
@@ -67,9 +83,9 @@ const swapButtonStyle: React.CSSProperties = {
   cursor: "pointer",
   flexShrink: 0,
   outline: "none",
-  color: "#666666",
+  color: colors.textMuted,
 };
 
 const swapHoverCss = `
-  .color-swap-btn:hover { color: #CCCCCC !important; }
+  .color-swap-btn:hover { color: ${colors.textTitle} !important; }
 `;

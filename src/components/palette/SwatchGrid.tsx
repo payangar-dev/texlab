@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useToolStore } from "../../store/toolStore";
-import { colors, fontSizes } from "../../styles/theme";
+import { colors, fontSizes, radii, shadows, sizing, spacing } from "../../styles/theme";
 import { colorDtoToHex, hexToColorDto } from "../../utils/colorHex";
 
 interface SwatchGridProps {
@@ -93,16 +93,28 @@ export function SwatchGrid({
 
 function buildShadow(isPrimary: boolean, isSecondary: boolean): string {
   const rings: string[] = [];
-  if (isPrimary) rings.push(`0 0 0 2px ${colors.accent}`);
-  if (isSecondary) rings.push(`0 0 0 2px #FFFFFF`);
-  rings.push("inset 0 0 0 1px rgba(0,0,0,0.35)");
+  if (isPrimary) rings.push(`0 0 0 ${sizing.selectionRing}px ${colors.accent}`);
+  if (isSecondary) rings.push(`0 0 0 ${sizing.selectionRing}px ${colors.white}`);
+  rings.push(shadows.swatchInsetBorder);
   return rings.join(", ");
 }
 
 const gridStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(16px, 1fr))",
-  gap: 3,
+  gridTemplateColumns: `repeat(auto-fill, minmax(${sizing.swatchMinCell}px, 1fr))`,
+  gap: spacing.grid,
+  // Safe-zone trick for the outer selection ring:
+  //  - padding = spacing.xs leaves room inside the grid's padding-box so
+  //    rings of edge cells are not clipped by `overflowY: auto` (which
+  //    forces overflow-x: auto as well per spec).
+  //  - negative margin of the same magnitude pulls the grid's outer
+  //    edges back into the parent's padding area, cancelling the
+  //    padding so the cells sit at the same panel-relative coordinates
+  //    they occupied before this fix.
+  //  Requires the parent panel to provide at least `spacing.xs` of
+  //  spill-room with `overflow: hidden` (see PalettePanel).
+  margin: `-${spacing.xs}px`,
+  padding: spacing.xs,
   overflowY: "auto",
   flex: 1,
   alignContent: "start",
@@ -112,13 +124,13 @@ const swatchStyle: React.CSSProperties = {
   width: "100%",
   aspectRatio: "1 / 1",
   border: "none",
-  borderRadius: 2,
+  borderRadius: radii.sm,
   padding: 0,
   cursor: "pointer",
 };
 
 const emptyStyle: React.CSSProperties = {
-  padding: 12,
+  padding: spacing.xl,
   color: colors.textMuted,
   fontSize: fontSizes.sm,
   textAlign: "center",

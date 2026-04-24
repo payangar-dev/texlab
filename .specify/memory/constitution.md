@@ -1,14 +1,14 @@
 <!--
   Sync Impact Report
-  Version change: N/A → 1.0.0 (initial ratification)
-  Added principles: Clean Architecture, Domain Purity, Dual-Access State,
-    Test-First Domain, Progressive Processing, Simplicity, Component-Based UI
-  Added sections: Technology Stack, Development Workflow
+  Version change: 1.0.0 → 1.1.0
+  Added principles: VIII. Theme-First, Mockups Second
+  Modified sections: none (purely additive)
   Templates requiring updates:
-    - .specify/templates/plan-template.md ⚠ pending (will be filled per feature)
+    - .specify/templates/plan-template.md ✅ compatible (no changes needed)
     - .specify/templates/spec-template.md ✅ compatible (no changes needed)
     - .specify/templates/tasks-template.md ✅ compatible (no changes needed)
-  Follow-up TODOs: none
+  Follow-up TODOs: WCAG AA contrast tuning tracked as a separate follow-up
+  (aspirational in principle VIII; not gated by this amendment).
 -->
 
 # TexLab Constitution
@@ -116,6 +116,39 @@ freely arrange.
   `<app_data_dir>/workspace.json` (via Tauri path API) and restored on
   app launch.
 
+### VIII. Theme-First, Mockups Second
+
+Visual literals — colours, font sizes, font weights, spacing, sizing, icon
+sizes, radii, shadows — live in exactly one place: `src/styles/theme.ts`.
+Mockups drive structure, composition, and hierarchy; they are not
+authoritative for raw pixel values.
+
+- `src/styles/theme.ts` is the sole source of truth for visual tokens.
+  Every other file under `src/**` (TS, TSX, CSS via CSS custom properties
+  written by `src/styles/applyThemeToRoot.ts`) MUST read tokens from there.
+- **If a needed token is missing, extend the theme first, then consume it.**
+  Hardcoding a value in a component is not allowed. Extending is additive:
+  new tokens may be added to an existing scale; renames are breaking and
+  MUST NOT land in the same PR as feature work.
+- **Structural exceptions** (not considered design tokens): the literal
+  values `0`, `1px` (hairline borders adjacent to `border*` / `outline*`
+  properties), `100%`, `auto`, and the CSS keywords `"transparent"` and
+  `"currentColor"`.
+- **User-generated colour exemption**: hex strings originating from the
+  user (picked pixels, saved swatches, imported palette entries) are data,
+  not design choices. They travel through `src/utils/color.ts` /
+  `src/utils/colorHex.ts` and are exempt from the rule.
+- **Legibility floor**: the smallest entry of `fontSizes` is the shipped
+  floor for text; the smallest entry of `iconSizes` is the shipped floor
+  for clickable icons. Nothing ships below the floor — if a mockup shows
+  a smaller value, ship the floor.
+- **WCAG AA** is the project's aspirational contrast target for text. It is
+  recorded here for future tuning but is not gated by this principle.
+- Enforcement: a Biome GritQL plugin
+  (`biome-plugins/no-style-literals.grit`, registered from `biome.json`)
+  flags hex literals and magic pixel numbers in style contexts outside
+  the exempt paths. `npm run check` fails on any violation.
+
 ## Technology Stack
 
 ### Rust Backend
@@ -210,4 +243,4 @@ these principles.
 - **Exceptions**: any deviation from a principle MUST be documented in the
   PR description with explicit justification and approval.
 
-**Version**: 1.0.0 | **Ratified**: 2026-03-28 | **Last Amended**: 2026-03-28
+**Version**: 1.1.0 | **Ratified**: 2026-03-28 | **Last Amended**: 2026-04-23

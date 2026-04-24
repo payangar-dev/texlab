@@ -1,6 +1,15 @@
 import { ChevronDown } from "lucide-react";
 import type { BlendMode } from "../../api/commands";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import {
+  colors,
+  fontSizes,
+  fonts,
+  fontWeights,
+  iconSizes,
+  radii,
+  sizing,
+  spacing,
+} from "../../styles/theme";
 
 const BLEND_MODES: { value: BlendMode; label: string }[] = [
   { value: "normal", label: "Normal" },
@@ -38,7 +47,11 @@ export function BlendModeSelect({ value, onChange }: BlendModeSelectProps) {
             </option>
           ))}
         </select>
-        <ChevronDown size={10} color={colors.textSecondary} style={chevronStyle} />
+        <ChevronDown
+          size={iconSizes.sm}
+          color={colors.textSecondary}
+          style={chevronStyle}
+        />
       </div>
     </div>
   );
@@ -47,17 +60,17 @@ export function BlendModeSelect({ value, onChange }: BlendModeSelectProps) {
 const containerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 6,
-  height: 28,
-  padding: "0 8px",
+  gap: spacing.md,
+  height: sizing.tabBarHeight,
+  padding: `0 ${spacing.lg}px`,
   flexShrink: 0,
 };
 
 const labelStyle: React.CSSProperties = {
   color: colors.textSecondary,
   fontFamily: fonts.ui,
-  fontSize: 9,
-  fontWeight: 600,
+  fontSize: fontSizes.xs,
+  fontWeight: fontWeights.semibold,
   userSelect: "none",
   flexShrink: 0,
 };
@@ -70,14 +83,14 @@ const selectWrapperStyle: React.CSSProperties = {
 
 const selectStyle: React.CSSProperties = {
   width: "100%",
-  height: 22,
+  height: sizing.input.sm,
   background: colors.inputField,
   color: colors.textTitle,
   fontFamily: fonts.ui,
   fontSize: fontSizes.xs,
   border: "none",
-  borderRadius: 4,
-  padding: "0 20px 0 6px",
+  borderRadius: radii.md,
+  padding: `0 ${sizing.button.xs}px 0 ${spacing.md}px`,
   cursor: "pointer",
   appearance: "none",
   outline: "none",
@@ -85,7 +98,7 @@ const selectStyle: React.CSSProperties = {
 
 const chevronStyle: React.CSSProperties = {
   position: "absolute",
-  right: 6,
+  right: spacing.md,
   top: "50%",
   transform: "translateY(-50%)",
   pointerEvents: "none",

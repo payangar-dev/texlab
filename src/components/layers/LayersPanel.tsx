@@ -26,7 +26,8 @@ import {
   setLayerBlendMode,
 } from "../../api/commands";
 import { useEditorStore } from "../../store/editorStore";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import { colors, fontSizes, fonts, sizing, spacing } from "../../styles/theme";
+import { IconButton } from "../primitives/IconButton";
 import { BlendModeSelect } from "./BlendModeSelect";
 import { LayerRow, LayerRowContent } from "./LayerRow";
 
@@ -206,35 +207,18 @@ export function LayersPanel() {
       {/* Action bar */}
       {hasTexture && (
         <div style={actionBarStyle}>
-          <button
-            type="button"
-            style={actionButtonStyle}
-            onClick={handleAddLayer}
-            title="Add layer"
-          >
-            <Plus size={12} color={colors.textSecondary} />
-          </button>
-          <button
-            type="button"
-            style={{
-              ...actionButtonStyle,
-              opacity: layers.length <= 1 ? 0.4 : 1,
-              cursor: layers.length <= 1 ? "not-allowed" : "pointer",
-            }}
+          <IconButton icon={Plus} title="Add layer" onClick={handleAddLayer} />
+          <IconButton
+            icon={Trash2}
+            title={layers.length <= 1 ? "Cannot delete the last layer" : "Delete layer"}
             onClick={handleRemoveLayer}
             disabled={layers.length <= 1}
-            title={layers.length <= 1 ? "Cannot delete the last layer" : "Delete layer"}
-          >
-            <Trash2 size={12} color={colors.textSecondary} />
-          </button>
-          <button
-            type="button"
-            style={actionButtonStyle}
-            onClick={handleDuplicateLayer}
+          />
+          <IconButton
+            icon={Copy}
             title="Duplicate layer"
-          >
-            <Copy size={12} color={colors.textSecondary} />
-          </button>
+            onClick={handleDuplicateLayer}
+          />
         </div>
       )}
     </div>
@@ -253,10 +237,10 @@ const containerStyle: React.CSSProperties = {
 const listStyle: React.CSSProperties = {
   flex: 1,
   overflowY: "auto",
-  padding: 4,
+  padding: spacing.sm,
   display: "flex",
   flexDirection: "column",
-  gap: 2,
+  gap: spacing.xs,
 };
 
 const emptyStyle: React.CSSProperties = {
@@ -264,28 +248,15 @@ const emptyStyle: React.CSSProperties = {
   fontFamily: fonts.ui,
   fontSize: fontSizes.sm,
   textAlign: "center",
-  marginTop: 16,
+  marginTop: spacing["2xl"],
   userSelect: "none",
 };
 
 const actionBarStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 4,
-  height: 28,
-  padding: "0 6px",
+  gap: spacing.sm,
+  height: sizing.tabBarHeight,
+  padding: `0 ${spacing.md}px`,
   flexShrink: 0,
-};
-
-const actionButtonStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: 24,
-  height: 22,
-  borderRadius: 4,
-  background: colors.inputField,
-  border: "none",
-  cursor: "pointer",
-  padding: 0,
 };

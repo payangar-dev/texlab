@@ -9,7 +9,7 @@ import {
   ZoomIn,
 } from "lucide-react";
 import { type ToolType, useToolStore } from "../../store/toolStore";
-import { colors } from "../../styles/theme";
+import { colors, iconSizes, radii, sizing, spacing } from "../../styles/theme";
 import { finalizeActiveStroke } from "../canvas/CanvasViewport";
 
 const DRAWING_TOOLS: { type: ToolType; icon: React.ElementType }[] = [
@@ -38,14 +38,14 @@ export function ToolsSidebar() {
   return (
     <div
       style={{
-        width: 48,
-        minWidth: 48,
+        width: sizing.toolSidebarWidth,
+        minWidth: sizing.toolSidebarWidth,
         background: colors.panelBody,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "8px 4px",
-        gap: 4,
+        padding: `${spacing.lg}px ${spacing.sm}px`,
+        gap: spacing.sm,
       }}
     >
       {DRAWING_TOOLS.map(({ type, icon: Icon }) => (
@@ -54,16 +54,16 @@ export function ToolsSidebar() {
           active={activeToolType === type}
           onClick={() => handleToolClick(type)}
         >
-          <Icon size={18} />
+          <Icon size={iconSizes.lg} />
         </ToolButton>
       ))}
 
       <div
         style={{
-          width: 28,
-          height: 1,
+          width: sizing.toolSeparatorWidth,
+          height: sizing.hairline,
           background: colors.separator,
-          margin: "4px 0",
+          margin: `${spacing.sm}px 0`,
         }}
       />
 
@@ -73,7 +73,7 @@ export function ToolsSidebar() {
           active={activeToolType === type}
           onClick={() => handleToolClick(type)}
         >
-          <Icon size={18} />
+          <Icon size={iconSizes.lg} />
         </ToolButton>
       ))}
     </div>
@@ -97,15 +97,15 @@ function ToolButton({
       onClick={onClick}
       disabled={disabled}
       style={{
-        width: 36,
-        height: 36,
+        width: sizing.button.xl,
+        height: sizing.button.xl,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: active ? colors.accent : "transparent",
+        background: active ? colors.accent : colors.transparent,
         border: "none",
-        borderRadius: 6,
-        color: active ? "#FFFFFF" : colors.iconDefault,
+        borderRadius: radii.lg,
+        color: active ? colors.white : colors.iconDefault,
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.3 : 1,
         padding: 0,

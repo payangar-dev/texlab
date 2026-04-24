@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useCommandDispatcher } from "../../commands/dispatcher";
 import { initializeCommands } from "../../commands/index";
 import { initPaletteListener, usePaletteStore } from "../../store/paletteStore";
+import { colors } from "../../styles/theme";
 import StatusBar from "../status-bar/StatusBar";
 import type { DockLayoutHandle } from "./DockLayout";
 import { DockLayout } from "./DockLayout";
@@ -29,7 +30,7 @@ export function AppShell() {
         flexDirection: "column",
         height: "100vh",
         overflow: "hidden",
-        background: "#1E1E1E",
+        background: colors.shellBackground,
       }}
     >
       <TitleBar onResetLayout={() => dockRef.current?.resetToDefault()} />

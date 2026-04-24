@@ -7,9 +7,8 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { colors } from "../../styles/theme";
-
-const ICON_SIZE = 12;
+import { colors, opacities, sizing, spacing } from "../../styles/theme";
+import { IconButton } from "../primitives/IconButton";
 
 type ActionBarHandlers = {
   onNew: () => void;
@@ -39,120 +38,68 @@ export function PaletteActionBar({
 }: PaletteActionBarProps) {
   return (
     <div style={barStyle} role="toolbar" aria-label="Palette actions">
-      <button
-        type="button"
-        style={buttonStyle}
-        onClick={onNew}
-        title="New palette"
-        aria-label="New palette"
-      >
-        <Plus size={ICON_SIZE} color={colors.textSecondary} />
-      </button>
-      <button
-        type="button"
-        style={{ ...buttonStyle, ...disabledIfStyle(!hasActivePalette) }}
+      <IconButton icon={Plus} title="New palette" onClick={onNew} />
+      <IconButton
+        icon={Pencil}
+        title="Rename palette"
         onClick={onRename}
         disabled={!hasActivePalette}
-        title="Rename palette"
-        aria-label="Rename palette"
-      >
-        <Pencil size={ICON_SIZE} color={colors.textSecondary} />
-      </button>
-      <button
-        type="button"
-        style={{ ...buttonStyle, ...disabledIfStyle(!hasActivePalette) }}
+      />
+      <IconButton
+        icon={Trash2}
+        title="Delete palette"
         onClick={onDelete}
         disabled={!hasActivePalette}
-        title="Delete palette"
-        aria-label="Delete palette"
-      >
-        <Trash2 size={ICON_SIZE} color={colors.textSecondary} />
-      </button>
+      />
       <div style={separatorStyle} />
-      <button
-        type="button"
-        style={{
-          ...buttonStyle,
-          ...disabledIfStyle(!hasActivePalette),
-          background: pipetteActive ? colors.accent : buttonStyle.background,
-        }}
-        onClick={onTogglePipette}
-        disabled={!hasActivePalette}
+      <IconButton
+        icon={Pipette}
         title={
           pipetteActive
             ? "Exit pipette mode"
             : "Pipette: click a canvas pixel to add its color"
         }
         aria-label="Toggle pipette mode"
-        aria-pressed={pipetteActive}
-      >
-        <Pipette
-          size={ICON_SIZE}
-          color={pipetteActive ? "#FFFFFF" : colors.textSecondary}
-        />
-      </button>
-      <button
-        type="button"
-        style={{ ...buttonStyle, ...disabledIfStyle(!hasActivePalette) }}
-        onClick={onAddPrimary}
+        onClick={onTogglePipette}
         disabled={!hasActivePalette}
+        toggled={pipetteActive}
+      />
+      <IconButton
+        icon={PaletteIcon}
         title="Add primary color to the palette"
         aria-label="Add primary color"
-      >
-        <PaletteIcon size={ICON_SIZE} color={colors.textSecondary} />
-      </button>
-      <div style={separatorStyle} />
-      <button
-        type="button"
-        style={{ ...buttonStyle, ...disabledIfStyle(!hasActivePalette) }}
-        onClick={onSave}
+        onClick={onAddPrimary}
         disabled={!hasActivePalette}
+      />
+      <div style={separatorStyle} />
+      <IconButton
+        icon={Save}
         title="Export palette to a .texpal file"
         aria-label="Save palette"
-      >
-        <Save size={ICON_SIZE} color={colors.textSecondary} />
-      </button>
-      <button
-        type="button"
-        style={buttonStyle}
-        onClick={onLoad}
+        onClick={onSave}
+        disabled={!hasActivePalette}
+      />
+      <IconButton
+        icon={Upload}
         title="Import a palette from a .texpal file"
         aria-label="Load palette"
-      >
-        <Upload size={ICON_SIZE} color={colors.textSecondary} />
-      </button>
+        onClick={onLoad}
+      />
     </div>
   );
-}
-
-function disabledIfStyle(disabled: boolean): React.CSSProperties {
-  return disabled ? { opacity: 0.4, cursor: "not-allowed" } : {};
 }
 
 const barStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 4,
+  gap: spacing.sm,
   flexShrink: 0,
 };
 
-const buttonStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: 22,
-  height: 20,
-  borderRadius: 4,
-  background: colors.inputField,
-  border: "none",
-  cursor: "pointer",
-  padding: 0,
-};
-
 const separatorStyle: React.CSSProperties = {
-  width: 1,
-  height: 14,
+  width: sizing.hairline,
+  height: sizing.separatorShortHeight,
   background: colors.separator,
-  margin: "0 2px",
-  opacity: 0.6,
+  margin: `0 ${spacing.xs}px`,
+  opacity: opacities.subtle,
 };

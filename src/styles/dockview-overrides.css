@@ -1,0 +1,35 @@
+/* Structural dockview overrides. Every value references a CSS custom
+   property set by src/styles/applyThemeToRoot.ts (sourced from theme.ts).
+   No hand-authored colour or pixel literal belongs in this file. */
+
+.dockview-theme-dark .dv-tabs-and-actions-container {
+  height: var(--dv-tabs-and-actions-container-height) !important;
+  min-height: var(--dv-tabs-and-actions-container-height);
+}
+
+.dockview-theme-dark .dv-tabs-container {
+  height: var(--dv-tabs-and-actions-container-height);
+  min-height: var(--dv-tabs-and-actions-container-height);
+}
+
+.dockview-theme-dark .dv-tab:focus-within::after,
+.dockview-theme-dark .dv-tab:focus::after {
+  outline: none !important;
+}
+
+.dockview-theme-dark .dv-default-tab {
+  font-family: var(--dv-font-family);
+  font-size: var(--dv-tab-font-size);
+  font-weight: var(--dv-tab-font-weight);
+  padding: var(--dv-tab-padding);
+}
+
+.dockview-theme-dark .dv-sash {
+  transition: background-color 0.15s ease-in-out !important;
+}
+
+.dockview-theme-dark .dv-sash:not(.disabled):hover,
+.dockview-theme-dark .dv-sash:not(.disabled):active {
+  background-color: var(--dv-sash-hover-background-color) !important;
+  transition-delay: 0s !important;
+}

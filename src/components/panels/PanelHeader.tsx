@@ -1,6 +1,14 @@
 import type { IDockviewPanelHeaderProps } from "dockview";
 import { GripHorizontal } from "lucide-react";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import {
+  colors,
+  fontSizes,
+  fonts,
+  fontWeights,
+  iconSizes,
+  sizing,
+  spacing,
+} from "../../styles/theme";
 
 export function PanelHeader({ api }: IDockviewPanelHeaderProps) {
   return (
@@ -8,23 +16,23 @@ export function PanelHeader({ api }: IDockviewPanelHeaderProps) {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 6,
+        gap: spacing.md,
         width: "100%",
-        height: 28,
-        padding: "0 8px",
+        height: sizing.tabBarHeight,
+        padding: `0 ${spacing.lg}px`,
         background: colors.panelHeader,
         userSelect: "none",
         cursor: "grab",
       }}
     >
-      <GripHorizontal size={12} color={colors.iconDefault} />
+      <GripHorizontal size={iconSizes.sm} color={colors.iconDefault} />
       <span
         style={{
           fontFamily: fonts.ui,
           fontSize: fontSizes.sm,
-          fontWeight: 600,
+          fontWeight: fontWeights.semibold,
           color: colors.textTitle,
-          lineHeight: "28px",
+          lineHeight: `${sizing.tabBarHeight}px`,
         }}
       >
         {api.title}

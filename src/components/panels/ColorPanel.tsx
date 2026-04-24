@@ -1,5 +1,6 @@
 import type { IDockviewPanelProps } from "dockview";
 import { useToolStore } from "../../store/toolStore";
+import { colors, spacing } from "../../styles/theme";
 import { ColorSlots } from "../color/ColorSlots";
 import { HexInput } from "../color/HexInput";
 import { HsvGradient } from "../color/HsvGradient";
@@ -27,7 +28,7 @@ const colorInputRowStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
-  gap: 5,
+  gap: spacing.sm,
   width: "100%",
 };
 
@@ -36,8 +37,8 @@ const containerStyle: React.CSSProperties = {
   height: "100%",
   display: "flex",
   flexDirection: "column",
-  background: "#252525",
-  padding: 6,
-  gap: 6,
+  background: colors.panelBody,
+  padding: spacing.md,
+  gap: spacing.md,
   boxSizing: "border-box",
 };

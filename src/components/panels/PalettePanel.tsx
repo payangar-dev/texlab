@@ -17,7 +17,7 @@ import {
 import { classifyPaletteError } from "../../api/paletteErrors";
 import { usePaletteStore } from "../../store/paletteStore";
 import { useToolStore } from "../../store/toolStore";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import { colors, fontSizes, fonts, spacing } from "../../styles/theme";
 import { colorDtoToHex } from "../../utils/colorHex";
 import { showToast } from "../../utils/toast";
 import { ImportConflictDialog } from "../palette/ImportConflictDialog";
@@ -27,6 +27,7 @@ import { PaletteActionBar } from "../palette/PaletteActionBar";
 import { PaletteDropdown } from "../palette/PaletteDropdown";
 import { RenamePaletteDialog } from "../palette/RenamePaletteDialog";
 import { SwatchGrid } from "../palette/SwatchGrid";
+import { Dialog, DialogActions, DialogButton, DialogTitle } from "../primitives/Dialog";
 
 type DialogState =
   | { kind: "none" }
@@ -289,23 +290,15 @@ function ConfirmPopover({
   onConfirm: () => void;
 }) {
   return (
-    <div style={backdropStyle} role="alertdialog" aria-label={title}>
-      <div style={confirmCardStyle}>
-        <div style={{ fontSize: fontSizes.md }}>{title}</div>
-        <div style={confirmActionsStyle}>
-          <button type="button" style={confirmButtonStyle} onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            style={{ ...confirmButtonStyle, background: "#E06C6C", color: "#FFFFFF" }}
-            onClick={onConfirm}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
+    <Dialog ariaLabel={title} role="alertdialog" size="sm" onEscape={onCancel}>
+      <DialogTitle>{title}</DialogTitle>
+      <DialogActions>
+        <DialogButton onClick={onCancel}>Cancel</DialogButton>
+        <DialogButton variant="danger" onClick={onConfirm}>
+          Delete
+        </DialogButton>
+      </DialogActions>
+    </Dialog>
   );
 }
 
@@ -314,8 +307,8 @@ const containerStyle: React.CSSProperties = {
   height: "100%",
   display: "flex",
   flexDirection: "column",
-  gap: 4,
-  padding: 6,
+  gap: spacing.sm,
+  padding: spacing.md,
   background: colors.panelBody,
   overflow: "hidden",
   boxSizing: "border-box",
@@ -324,47 +317,9 @@ const containerStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   display: "block",
   flex: 1,
-  padding: 12,
+  padding: spacing.xl,
   textAlign: "center",
   color: colors.textMuted,
   fontFamily: fonts.ui,
-  fontSize: fontSizes.sm,
-};
-
-const backdropStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.5)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const confirmCardStyle: React.CSSProperties = {
-  background: colors.panelHeader,
-  color: colors.textPrimary,
-  padding: 20,
-  borderRadius: 6,
-  minWidth: 300,
-  fontFamily: fonts.ui,
-  display: "flex",
-  flexDirection: "column",
-  gap: 14,
-};
-
-const confirmActionsStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-};
-
-const confirmButtonStyle: React.CSSProperties = {
-  padding: "6px 14px",
-  borderRadius: 4,
-  border: "none",
-  background: colors.inputField,
-  color: colors.textPrimary,
-  cursor: "pointer",
   fontSize: fontSizes.sm,
 };

@@ -1,7 +1,17 @@
 import { ChevronDown, FolderClosed, Globe } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PaletteDto } from "../../api/commands";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import {
+  colors,
+  fontSizes,
+  fonts,
+  iconSizes,
+  radii,
+  shadows,
+  sizing,
+  spacing,
+  zIndices,
+} from "../../styles/theme";
 
 interface PaletteDropdownProps {
   palettes: PaletteDto[];
@@ -53,7 +63,7 @@ export function PaletteDropdown({
           {active ? <ScopeIcon scope={active.scope} /> : null}
           <span style={nameStyle}>{active?.name ?? "— Select a palette —"}</span>
         </span>
-        <ChevronDown size={10} color={colors.textSecondary} />
+        <ChevronDown size={iconSizes.sm} color={colors.textSecondary} />
       </button>
       {open && (
         <div role="listbox" style={menuStyle}>
@@ -67,7 +77,7 @@ export function PaletteDropdown({
                 aria-selected={isActive}
                 style={{
                   ...optionStyle,
-                  background: isActive ? colors.selectedItem : "transparent",
+                  background: isActive ? colors.selectedItem : colors.transparent,
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
@@ -103,9 +113,9 @@ function ScopeIcon({ scope }: { scope: "global" | "project" }) {
       style={{ display: "inline-flex", alignItems: "center", flexShrink: 0 }}
     >
       {scope === "global" ? (
-        <Globe size={10} color={colors.textSecondary} />
+        <Globe size={iconSizes.sm} color={colors.textSecondary} />
       ) : (
-        <FolderClosed size={10} color={colors.textSecondary} />
+        <FolderClosed size={iconSizes.sm} color={colors.textSecondary} />
       )}
     </span>
   );
@@ -118,26 +128,26 @@ const containerStyle: React.CSSProperties = {
 
 const triggerStyle: React.CSSProperties = {
   width: "100%",
-  height: 22,
-  padding: "0 6px",
+  height: sizing.input.sm,
+  padding: `0 ${spacing.md}px`,
   background: colors.inputField,
   color: colors.textTitle,
   border: "none",
-  borderRadius: 4,
+  borderRadius: radii.md,
   fontFamily: fonts.ui,
   fontSize: fontSizes.xs,
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: 6,
+  gap: spacing.md,
   textAlign: "left",
 };
 
 const triggerInnerStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: 6,
+  gap: spacing.md,
   minWidth: 0,
   flex: 1,
 };
@@ -150,19 +160,19 @@ const nameStyle: React.CSSProperties = {
 
 const menuStyle: React.CSSProperties = {
   position: "absolute",
-  top: "calc(100% + 2px)",
+  top: `calc(100% + ${spacing.xs}px)`,
   left: 0,
   right: 0,
   background: colors.panelHeader,
   border: `1px solid ${colors.separator}`,
-  borderRadius: 4,
+  borderRadius: radii.md,
   listStyle: "none",
   margin: 0,
-  padding: 2,
-  maxHeight: 320,
+  padding: spacing.xs,
+  maxHeight: sizing.dropdownMaxHeight,
   overflowY: "auto",
-  zIndex: 10,
-  boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
+  zIndex: zIndices.dropdown,
+  boxShadow: shadows.dropdownElevation,
   fontFamily: fonts.ui,
   fontSize: fontSizes.xs,
   color: colors.textPrimary,
@@ -171,8 +181,8 @@ const menuStyle: React.CSSProperties = {
 const optionStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 6,
-  padding: "4px 6px",
-  borderRadius: 3,
+  gap: spacing.md,
+  padding: `${spacing.sm}px ${spacing.md}px`,
+  borderRadius: radii.xs,
   cursor: "pointer",
 };

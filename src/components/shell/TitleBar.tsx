@@ -1,7 +1,15 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Copy, Minus, Square, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import {
+  colors,
+  fontSizes,
+  fonts,
+  fontWeights,
+  iconSizes,
+  sizing,
+  spacing,
+} from "../../styles/theme";
 
 const MENU_ITEMS = ["File", "Edit", "View", "Tools", "Help"] as const;
 
@@ -44,12 +52,12 @@ export function TitleBar({ onResetLayout }: { onResetLayout?: () => void }) {
     <div
       data-tauri-drag-region
       style={{
-        height: 36,
-        minHeight: 36,
+        height: sizing.titleBarHeight,
+        minHeight: sizing.titleBarHeight,
         background: colors.titleBar,
         display: "flex",
         alignItems: "center",
-        padding: "0 12px",
+        padding: `0 ${spacing.xl}px`,
         userSelect: "none",
         WebkitUserSelect: "none",
       }}
@@ -59,15 +67,18 @@ export function TitleBar({ onResetLayout }: { onResetLayout?: () => void }) {
         style={{
           fontFamily: fonts.ui,
           fontSize: fontSizes.lg,
-          fontWeight: 600,
+          fontWeight: fontWeights.semibold,
           color: colors.textPrimary,
-          marginRight: 24,
+          marginRight: spacing["3xl"],
         }}
       >
         TexLab
       </span>
 
-      <div data-tauri-drag-region style={{ display: "flex", gap: 16, flex: 1 }}>
+      <div
+        data-tauri-drag-region
+        style={{ display: "flex", gap: spacing["2xl"], flex: 1 }}
+      >
         {MENU_ITEMS.map((item) => {
           const isView = item === "View" && onResetLayout;
           return isView ? (
@@ -106,13 +117,13 @@ export function TitleBar({ onResetLayout }: { onResetLayout?: () => void }) {
 
       <div style={{ display: "flex", alignItems: "center" }}>
         <WindowButton onClick={handleMinimize}>
-          <Minus size={14} />
+          <Minus size={iconSizes.md} />
         </WindowButton>
         <WindowButton onClick={handleToggleMaximize}>
-          {isMaximized ? <Copy size={11} /> : <Square size={11} />}
+          {isMaximized ? <Copy size={iconSizes.sm} /> : <Square size={iconSizes.sm} />}
         </WindowButton>
         <WindowButton onClick={handleClose} hoverColor={colors.closeHover}>
-          <X size={14} />
+          <X size={iconSizes.md} />
         </WindowButton>
       </div>
     </div>
@@ -137,12 +148,12 @@ function WindowButton({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        width: 46,
-        height: 36,
+        width: sizing.windowButton.width,
+        height: sizing.windowButton.height,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: hovered ? (hoverColor ?? "rgba(255,255,255,0.1)") : "transparent",
+        background: hovered ? (hoverColor ?? colors.overlayHover) : colors.transparent,
         border: "none",
         color: colors.textTitle,
         cursor: "pointer",

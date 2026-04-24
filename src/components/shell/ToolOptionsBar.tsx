@@ -1,5 +1,13 @@
 import { type ToolType, useToolStore } from "../../store/toolStore";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import {
+  colors,
+  fontSizes,
+  fonts,
+  fontWeights,
+  radii,
+  sizing,
+  spacing,
+} from "../../styles/theme";
 
 const TOOL_LABELS: Record<ToolType, string> = {
   brush: "Brush",
@@ -21,21 +29,21 @@ const labelStyle: React.CSSProperties = {
 
 const titleStyle: React.CSSProperties = {
   fontSize: fontSizes.md,
-  fontWeight: 600,
+  fontWeight: fontWeights.semibold,
   color: colors.textTitle,
   userSelect: "none",
   fontFamily: fonts.ui,
 };
 
 const valueBoxStyle: React.CSSProperties = {
-  height: 20,
-  minWidth: 44,
+  height: sizing.button.xs,
+  minWidth: sizing.valueBoxMinWidth,
   background: colors.inputField,
-  borderRadius: 4,
+  borderRadius: radii.md,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "0 6px",
+  padding: `0 ${spacing.md}px`,
 };
 
 const valueTextStyle: React.CSSProperties = {
@@ -74,8 +82,8 @@ function NumericInput({
           }}
           style={{
             ...valueTextStyle,
-            width: 36,
-            background: "transparent",
+            width: sizing.button.xl,
+            background: colors.transparent,
             border: "none",
             outline: "none",
             textAlign: "center",
@@ -104,7 +112,7 @@ function ToggleButton({
       style={{
         ...valueBoxStyle,
         background: active ? colors.accent : colors.inputField,
-        color: active ? "#FFFFFF" : colors.textSecondary,
+        color: active ? colors.white : colors.textSecondary,
         fontSize: fontSizes.xs,
         fontFamily: fonts.ui,
         border: "none",
@@ -196,13 +204,13 @@ export function ToolOptionsBar() {
   return (
     <div
       style={{
-        height: 28,
-        minHeight: 28,
+        height: sizing.tabBarHeight,
+        minHeight: sizing.tabBarHeight,
         background: colors.shellBackground,
         display: "flex",
         alignItems: "center",
-        padding: "0 12px",
-        gap: 16,
+        padding: `0 ${spacing.xl}px`,
+        gap: spacing["2xl"],
       }}
     >
       <span style={titleStyle}>{TOOL_LABELS[activeToolType]}</span>

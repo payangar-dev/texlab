@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { PaletteScopeDto } from "../../api/commands";
-import { colors, fontSizes, fonts } from "../../styles/theme";
+import { colors, fontSizes, opacities, sizing, spacing } from "../../styles/theme";
+import {
+  Dialog,
+  DialogActions,
+  DialogButton,
+  DialogInput,
+  DialogTitle,
+} from "../primitives/Dialog";
 import { validatePaletteName } from "./paletteNameValidation";
 
 interface NewPaletteDialogProps {
@@ -34,128 +41,77 @@ export function NewPaletteDialog({
   };
 
   return (
-    <div style={backdropStyle} role="dialog" aria-label="New palette">
-      <form style={cardStyle} onSubmit={handleSubmit}>
-        <h2 style={titleStyle}>New palette</h2>
-        <label style={labelStyle}>
-          Name
+    <Dialog ariaLabel="New palette" onSubmit={handleSubmit} onEscape={onCancel}>
+      <DialogTitle>New palette</DialogTitle>
+      <label style={labelStyle} htmlFor="new-palette-name">
+        Name
+        <DialogInput
+          id="new-palette-name"
+          inputRef={inputRef}
+          value={name}
+          onChange={(v) => {
+            setName(v);
+            setError(null);
+          }}
+          onEscape={onCancel}
+          ariaLabel="Palette name"
+        />
+      </label>
+      <fieldset style={fieldsetStyle}>
+        <legend style={legendStyle}>Scope</legend>
+        <label style={radioLabelStyle}>
           <input
-            ref={inputRef}
-            type="text"
-            style={inputStyle}
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setError(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                e.preventDefault();
-                onCancel();
-              }
-            }}
-            aria-label="Palette name"
+            type="radio"
+            name="scope"
+            value="global"
+            checked={scope === "global"}
+            onChange={() => setScope("global")}
           />
+          Global
         </label>
-        <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>Scope</legend>
-          <label style={radioLabelStyle}>
-            <input
-              type="radio"
-              name="scope"
-              value="global"
-              checked={scope === "global"}
-              onChange={() => setScope("global")}
-            />
-            Global
-          </label>
-          <label
-            style={{
-              ...radioLabelStyle,
-              opacity: canCreateProjectPalette ? 1 : 0.5,
-              cursor: canCreateProjectPalette ? "pointer" : "not-allowed",
-            }}
-            title={
-              canCreateProjectPalette
-                ? undefined
-                : "Open a project to save palettes in project scope."
-            }
-          >
-            <input
-              type="radio"
-              name="scope"
-              value="project"
-              checked={scope === "project"}
-              disabled={!canCreateProjectPalette}
-              onChange={() => setScope("project")}
-            />
-            Project
-          </label>
-        </fieldset>
-        {error && (
-          <div style={errorStyle} role="alert">
-            {error}
-          </div>
-        )}
-        <div style={actionsStyle}>
-          <button type="button" style={buttonStyle} onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            type="submit"
-            style={{ ...buttonStyle, background: colors.accent, color: "#FFFFFF" }}
-          >
-            Create
-          </button>
+        <label
+          style={{
+            ...radioLabelStyle,
+            opacity: canCreateProjectPalette ? opacities.full : opacities.halfDimmed,
+            cursor: canCreateProjectPalette ? "pointer" : "not-allowed",
+          }}
+          title={
+            canCreateProjectPalette
+              ? undefined
+              : "Open a project to save palettes in project scope."
+          }
+        >
+          <input
+            type="radio"
+            name="scope"
+            value="project"
+            checked={scope === "project"}
+            disabled={!canCreateProjectPalette}
+            onChange={() => setScope("project")}
+          />
+          Project
+        </label>
+      </fieldset>
+      {error && (
+        <div style={errorStyle} role="alert">
+          {error}
         </div>
-      </form>
-    </div>
+      )}
+      <DialogActions>
+        <DialogButton onClick={onCancel}>Cancel</DialogButton>
+        <DialogButton type="submit" variant="primary">
+          Create
+        </DialogButton>
+      </DialogActions>
+    </Dialog>
   );
 }
-
-const backdropStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.5)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const cardStyle: React.CSSProperties = {
-  background: colors.panelHeader,
-  color: colors.textPrimary,
-  padding: 20,
-  borderRadius: 6,
-  minWidth: 320,
-  fontFamily: fonts.ui,
-  fontSize: fontSizes.sm,
-  display: "flex",
-  flexDirection: "column",
-  gap: 10,
-};
-
-const titleStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: fontSizes.md,
-  color: colors.textTitle,
-};
 
 const labelStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 4,
+  gap: spacing.sm,
   color: colors.textSecondary,
-};
-
-const inputStyle: React.CSSProperties = {
-  background: colors.inputField,
-  border: `1px solid ${colors.separator}`,
-  color: colors.textPrimary,
-  padding: "6px 8px",
-  borderRadius: 4,
-  fontSize: fontSizes.sm,
 };
 
 const fieldsetStyle: React.CSSProperties = {
@@ -163,40 +119,23 @@ const fieldsetStyle: React.CSSProperties = {
   padding: 0,
   margin: 0,
   display: "flex",
-  gap: 14,
+  gap: sizing.dialog.fieldsetGap,
 };
 
 const legendStyle: React.CSSProperties = {
   color: colors.textSecondary,
   padding: 0,
-  marginBottom: 4,
+  marginBottom: spacing.sm,
 };
 
 const radioLabelStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  gap: 4,
+  gap: spacing.sm,
   color: colors.textPrimary,
 };
 
 const errorStyle: React.CSSProperties = {
-  color: "#E06C6C",
+  color: colors.errorText,
   fontSize: fontSizes.xs,
-};
-
-const actionsStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 8,
-  marginTop: 6,
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: "6px 14px",
-  borderRadius: 4,
-  border: "none",
-  background: colors.inputField,
-  color: colors.textPrimary,
-  cursor: "pointer",
-  fontSize: fontSizes.sm,
 };

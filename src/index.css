@@ -1,4 +1,5 @@
-@import "./styles/dockview-theme.css";
+@import "dockview/dist/styles/dockview.css";
+@import "./styles/dockview-overrides.css";
 
 *,
 *::before,
@@ -13,7 +14,7 @@ body,
 #root {
   height: 100%;
   overflow: hidden;
-  background: #1e1e1e;
-  font-family: Inter, system-ui, -apple-system, sans-serif;
-  color: #ccc;
+  background: var(--app-background);
+  font-family: var(--app-font-ui);
+  color: var(--app-text-primary);
 }
